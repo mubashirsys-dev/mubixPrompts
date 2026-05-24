@@ -1,26 +1,253 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;900&display=block');
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'Space Grotesk', sans-serif;
+  --font-mono: 'Space Grotesk', sans-serif;
+  --font-heading: 'Space Grotesk', sans-serif;
+  
+  --color-ring: #000000;
+  --color-input: #000000;
+  --color-border: #000000;
+  
+  --color-accent-foreground: #ffffff;
+  --color-accent: #FF6B6B;
+  --color-muted-foreground: #000000;
+  --color-muted: #C4B5FD;
+  --color-secondary-foreground: #000000;
+  --color-secondary: #FFD93D;
+  --color-primary-foreground: #ffffff;
+  --color-primary: #000000;
+  --color-card-foreground: #000000;
+  --color-card: #ffffff;
+  
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
+
+  --animate-spin-slow: spin-slow 12s linear infinite;
+  --animate-bounce-custom: bounce-custom 2s ease-in-out infinite;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --background: #FFFDF5;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --primary: #000000;
+  --primary-foreground: #ffffff;
+  --secondary: #FFD93D;
+  --secondary-foreground: #000000;
+  --muted: #C4B5FD;
+  --muted-foreground: #000000;
+  --accent: #FF6B6B;
+  --accent-foreground: #ffffff;
+  --destructive: #FF6B6B;
+  --border: #000000;
+  --input: #ffffff;
+  --ring: #000000;
+  --radius: 0px;
+}
+
+/* ============================================
+   GLOBAL STYLES
+   ============================================ */
+
+@layer base {
+  * {
+    border-color: #000000 !important;
+    outline-color: #000000;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  html {
+    font-family: 'Space Grotesk', sans-serif;
+    scroll-smooth: always;
+  }
+  /* Force all cards and inputs to rounded-none unless explicitly full rounded */
+  .rounded-lg, .rounded-md, .rounded-xl, .rounded-2xl, .rounded-3xl {
+    border-radius: 0px !important;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ============================================
+   CUSTOM ANIMATIONS
+   ============================================ */
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes bounce-custom {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+}
+
+/* ============================================
+   NEO-BRUTALIST UTILITIES & CLASSES
+   ============================================ */
+
+/* The Sticker effect cards */
+.neo-card {
+  background-color: #ffffff;
+  border: 4px solid #000000;
+  box-shadow: 8px 8px 0px 0px #000000;
+  transition: all 0.2s ease;
+  border-radius: 0px !important;
+}
+
+.neo-card:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: 12px 12px 0px 0px #000000;
+}
+
+/* Mechanical Push down Button effect */
+.neo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: #ffffff;
+  border: 4px solid #000000;
+  box-shadow: 4px 4px 0px 0px #000000;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.1s ease;
+  cursor: pointer;
+  border-radius: 0px !important;
+}
+
+.neo-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px #000000;
+}
+
+.neo-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px 0px #000000;
+}
+
+/* Color Accent Variants */
+.neo-btn-accent {
+  background-color: #FF6B6B;
+  color: #ffffff;
+}
+.neo-btn-accent:hover {
+  background-color: #ff5252;
+}
+
+.neo-btn-secondary {
+  background-color: #FFD93D;
+  color: #000000;
+}
+.neo-btn-secondary:hover {
+  background-color: #fccf1d;
+}
+
+.neo-btn-muted {
+  background-color: #C4B5FD;
+  color: #000000;
+}
+.neo-btn-muted:hover {
+  background-color: #b09ffd;
+}
+
+/* Inputs */
+.neo-input {
+  background-color: #ffffff;
+  border: 4px solid #000000;
+  color: #000000;
+  font-weight: 700;
+  padding: 0.75rem 1rem;
+  border-radius: 0px !important;
+  transition: all 0.2s ease;
+}
+
+.neo-input:focus {
+  outline: none;
+  background-color: #FFD93D;
+  box-shadow: 4px 4px 0px 0px #000000;
+}
+
+/* Text stroke typography */
+.neo-stroke-text {
+  color: transparent;
+  -webkit-text-stroke: 2px #000000;
+}
+
+/* Gradient effects (neo-brutalist pop) */
+.gradient-text {
+  background: linear-gradient(90deg, #FF6B6B, #FFD93D, #C4B5FD);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 900;
+}
+
+/* Texture patterns */
+.bg-neo-grid {
+  background-size: 40px 40px;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.07) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(0, 0, 0, 0.07) 1px, transparent 1px);
+}
+
+.bg-neo-dots {
+  background-image: radial-gradient(#000000 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+/* Halftone style sticker accent */
+.neo-sticker {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: 3px solid #000000;
+  transform: rotate(-2deg);
+  box-shadow: 3px 3px 0px 0px #000000;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #FFFDF5;
+  border-left: 4px solid #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FF6B6B;
+  border: 3px solid #FFFDF5;
+  border-radius: 0px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #FFD93D;
+}
+
+/* Selection */
+::selection {
+  background: #FFD93D;
+  color: #000000;
 }
