@@ -24,8 +24,6 @@ export function WebsiteGoalsStep() {
   const {
     websiteGoals,
     setWebsiteGoals,
-    complexityTier,
-    setComplexityTier,
     nextStep,
     prevStep
   } = useBuilderStore();
@@ -38,24 +36,18 @@ export function WebsiteGoalsStep() {
     }
   };
 
-  const speedTiers: { id: ComplexityTier; label: string; desc: string; color: string }[] = [
-    { id: "simple", label: "FAST MODE", desc: "Ultra fast compiling, lightweight static prompt layout structures.", color: "bg-green-100 text-green-700 border-green-300" },
-    { id: "standard", label: "STANDARD MODE (RECOMMENDED)", desc: "Perfect balanced generation, high-integrity clean components and detailed specifications.", color: "bg-yellow-100 text-yellow-700 border-yellow-300" },
-    { id: "advanced", label: "ULTRA MODE", desc: "Highly detailed, slow custom production-ready directives and advanced systems logic.", color: "bg-purple-100 text-purple-700 border-purple-300" },
-  ];
-
   return (
     <div className="space-y-8 bg-white border-4 border-black p-6 sm:p-8 shadow-[8px_8px_0px_0px_#000] max-w-4xl mx-auto">
       {/* Title */}
       <div className="text-center mb-6">
         <span className="inline-block px-3 py-1 bg-[#FFD93D] border-2 border-black font-black uppercase text-xs rotate-[-1deg] mb-4">
-          STEP 3: BLUEPRINT GOALS & SPEED
+          STEP 3: BLUEPRINT GOALS
         </span>
         <h2 className="text-3xl font-black uppercase text-black">
           Define Your Objectives
         </h2>
         <p className="text-sm font-bold text-black/70 mt-2">
-          Select what you want this website to achieve, and choose your prompt compiler speed.
+          Select what you want this website to achieve.
         </p>
       </div>
 
@@ -85,38 +77,6 @@ export function WebsiteGoalsStep() {
                   <h4 className="font-black uppercase text-xs text-black">{goal.label}</h4>
                   <p className="text-[10px] font-bold text-black/60 leading-relaxed mt-0.5">{goal.desc}</p>
                 </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Section 2: Generation Speed */}
-      <div className="space-y-4 border-t-4 border-black pt-6">
-        <h3 className="text-sm font-black uppercase text-black flex items-center gap-2 border-b-2 border-black pb-2">
-          <Zap className="w-4 h-4 text-[#FFD93D]" />
-          Choose Prompt Generation Speed
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {speedTiers.map((item) => {
-            const isSelected = complexityTier === item.id || (item.id === "advanced" && complexityTier === "enterprise");
-            return (
-              <button
-                key={item.id}
-                onClick={() => setComplexityTier(item.id)}
-                className={`text-left p-4 border-2 border-black transition-all flex flex-col justify-between h-full shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px] active:shadow-none ${
-                  isSelected ? "bg-[#FFD93D]/25 border-[#FFD93D] shadow-[3px_3px_0px_0px_#FFD93D]" : "bg-white hover:bg-neutral-50"
-                }`}
-              >
-                <div>
-                  <span className="text-xs font-black uppercase text-black block">{item.label}</span>
-                  <p className="text-[10px] font-bold text-black/60 leading-relaxed mt-1.5">{item.desc}</p>
-                </div>
-                <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 border border-black inline-block mt-4 self-start ${
-                  isSelected ? "bg-black text-white" : "bg-neutral-100 text-black/65"
-                }`}>
-                  {isSelected ? "Selected" : "Select"}
-                </span>
               </button>
             );
           })}
