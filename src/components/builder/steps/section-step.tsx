@@ -2,11 +2,18 @@
 
 import { useState } from "react";
 import { useBuilderStore } from "@/store/builder-store";
-import { ArrowUp, ArrowDown, Trash2, Plus, Copy, Sparkles, Layout } from "lucide-react";
+import { getComplexityGatedSections } from "@/lib/category-intelligence";
+import { ArrowUp, ArrowDown, Trash2, Plus, Copy, Sparkles, Layout, Lock } from "lucide-react";
 
 export function SectionStep() {
-  const { selectedSections, setSectionsSequence, nextStep, prevStep } = useBuilderStore();
+  const { selectedSections, setSectionsSequence, selectedCategory, complexityTier, nextStep, prevStep } = useBuilderStore();
   const [newSection, setNewSection] = useState("");
+
+  // Get complexity-gated defaults for reset
+  const defaultSections = getComplexityGatedSections(selectedCategory?.id || null, complexityTier);
+
+  // Locked sections that can't be removed
+  const lockedSections = new Set(["Hero", "Footer"]);
 
   const moveUp = (index: number) => {
     if (index === 0) return;
@@ -27,6 +34,7 @@ export function SectionStep() {
   };
 
   const removeSection = (index: number) => {
+    if (lockedSections.has(selectedSections[index])) return;
     const newSeq = selectedSections.filter((_, i) => i !== index);
     setSectionsSequence(newSeq);
   };
@@ -43,15 +51,25 @@ export function SectionStep() {
     setNewSection("");
   };
 
+  const complexityLabel = {
+    simple: "Max 6 sections • Static landing page",
+    standard: "Multi-section layout • No pricing/dashboards",
+    advanced: "Full layout • Auth & API sections unlocked",
+    enterprise: "All sections • Dashboards & admin included",
+  };
+
   return (
     <div className="space-y-8 bg-white border-4 border-black p-6 sm:p-8 shadow-[8px_8px_0px_0px_#000]">
       <div className="text-center mb-8">
         <span className="inline-block px-3 py-1 bg-[#FFD93D] border-2 border-black font-black uppercase text-xs rotate-[-1deg] mb-4">
-          STEP 5: SECTION SEQUENCE BUILDER
+          STEP 5: SECTION BUILDER
         </span>
-        <h2 className="text-2xl font-black uppercase text-black">Sequence your Website Sections</h2>
+        <h2 className="text-2xl font-black uppercase text-black">Website Section Sequence</h2>
         <p className="text-sm font-bold text-black/70 mt-2">
-          Arrange, duplicate, or inject custom sections into your target homepage tree. Your prompt compile instructions will explicitly respect this order.
+          Arrange your homepage sections. The prompt will respect this exact order.
+        </p>
+        <p className="text-[10px] font-black uppercase text-[#C4B5FD] mt-1">
+          {complexityLabel[complexityTier]}
         </p>
       </div>
 
@@ -60,7 +78,7 @@ export function SectionStep() {
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Type a custom section (e.g. Gallery Carousel, Case Studies)..."
+            placeholder="Type a custom section (e.g. Gallery, Case Studies)..."
             value={newSection}
             onChange={(e) => setNewSection(e.target.value)}
             className="flex-1 neo-input text-xs sm:text-sm"
@@ -78,66 +96,66 @@ export function SectionStep() {
         {/* Section List */}
         <div className="border-4 border-black bg-[#FFFDF5] p-4 space-y-3 shadow-[4px_4px_0px_0px_#000] max-h-[450px] overflow-y-auto">
           {selectedSections.length === 0 ? (
-            <p className="text-center py-6 font-bold text-black/50 text-xs uppercase">No sections added yet! Add a custom section above.</p>
+            <p className="text-center py-6 font-bold text-black/50 text-xs uppercase">No sections added yet!</p>
           ) : (
-            selectedSections.map((section, idx) => (
-              <div
-                key={`${section}-${idx}`}
-                className="flex items-center justify-between border-2 border-black p-3 bg-white shadow-[2px_2px_0px_0px_#000]"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 border-2 border-black bg-[#FFD93D] flex items-center justify-center text-[10px] font-black text-black">
-                    {idx + 1}
-                  </span>
-                  <span className="font-black uppercase text-xs sm:text-sm text-black flex items-center gap-1.5">
-                    <Layout className="w-4 h-4 text-black/60" />
-                    {section}
-                  </span>
-                </div>
+            selectedSections.map((section, idx) => {
+              const isLocked = lockedSections.has(section);
+              return (
+                <div
+                  key={`${section}-${idx}`}
+                  className="flex items-center justify-between border-2 border-black p-3 bg-white shadow-[2px_2px_0px_0px_#000]"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 border-2 border-black bg-[#FFD93D] flex items-center justify-center text-[10px] font-black text-black">
+                      {idx + 1}
+                    </span>
+                    <span className="font-black uppercase text-xs sm:text-sm text-black flex items-center gap-1.5">
+                      <Layout className="w-4 h-4 text-black/60" />
+                      {section}
+                      {isLocked && <Lock className="w-3 h-3 text-black/30" />}
+                    </span>
+                  </div>
 
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <button
-                    onClick={() => moveUp(idx)}
-                    disabled={idx === 0}
-                    className="p-1.5 border border-black bg-white hover:bg-neutral-50 disabled:opacity-30 disabled:hover:bg-white"
-                  >
-                    <ArrowUp className="w-3.5 h-3.5 stroke-[3px]" />
-                  </button>
-                  <button
-                    onClick={() => moveDown(idx)}
-                    disabled={idx === selectedSections.length - 1}
-                    className="p-1.5 border border-black bg-white hover:bg-neutral-50 disabled:opacity-30 disabled:hover:bg-white"
-                  >
-                    <ArrowDown className="w-3.5 h-3.5 stroke-[3px]" />
-                  </button>
-                  <button
-                    onClick={() => duplicateSection(idx)}
-                    className="p-1.5 border border-black bg-[#C4B5FD] hover:bg-[#b09ffd]"
-                    title="Duplicate section"
-                  >
-                    <Copy className="w-3.5 h-3.5 stroke-[3px]" />
-                  </button>
-                  <button
-                    onClick={() => removeSection(idx)}
-                    className="p-1.5 border border-black bg-[#FF6B6B] hover:bg-red-500 text-white"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 stroke-[3px]" />
-                  </button>
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <button
+                      onClick={() => moveUp(idx)}
+                      disabled={idx === 0}
+                      className="p-1.5 border border-black bg-white hover:bg-neutral-50 disabled:opacity-30"
+                    >
+                      <ArrowUp className="w-3.5 h-3.5 stroke-[3px]" />
+                    </button>
+                    <button
+                      onClick={() => moveDown(idx)}
+                      disabled={idx === selectedSections.length - 1}
+                      className="p-1.5 border border-black bg-white hover:bg-neutral-50 disabled:opacity-30"
+                    >
+                      <ArrowDown className="w-3.5 h-3.5 stroke-[3px]" />
+                    </button>
+                    <button
+                      onClick={() => duplicateSection(idx)}
+                      className="p-1.5 border border-black bg-[#C4B5FD] hover:bg-[#b09ffd]"
+                      title="Duplicate"
+                    >
+                      <Copy className="w-3.5 h-3.5 stroke-[3px]" />
+                    </button>
+                    <button
+                      onClick={() => removeSection(idx)}
+                      disabled={isLocked}
+                      className={`p-1.5 border border-black ${isLocked ? "bg-neutral-200 opacity-30 cursor-not-allowed" : "bg-[#FF6B6B] hover:bg-red-500 text-white"}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 stroke-[3px]" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
-        {/* Restore defaults */}
+        {/* Reset */}
         <div className="flex justify-end">
           <button
-            onClick={() => {
-              const category = useBuilderStore.getState().selectedCategory;
-              if (category) {
-                useBuilderStore.getState().setCategory(category);
-              }
-            }}
+            onClick={() => setSectionsSequence(defaultSections)}
             className="text-xs font-black uppercase text-black hover:underline"
           >
             [ Reset to Category Defaults ]
@@ -147,10 +165,7 @@ export function SectionStep() {
 
       {/* Navigation */}
       <div className="flex items-center justify-between pt-6 border-t-4 border-black">
-        <button
-          onClick={prevStep}
-          className="neo-btn text-sm py-2 px-6 font-black uppercase"
-        >
+        <button onClick={prevStep} className="neo-btn text-sm py-2 px-6 font-black uppercase">
           Back
         </button>
         <button

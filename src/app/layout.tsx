@@ -50,8 +50,9 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-screen bg-[#FFFDF5] text-black">
+      <body className="min-h-screen bg-[#FFFDF5] text-black" suppressHydrationWarning>
         <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>

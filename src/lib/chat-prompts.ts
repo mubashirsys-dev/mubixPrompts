@@ -9,14 +9,14 @@ export function getChatSystemPrompt(state: BuilderState, activeMode: string): st
     selectedTechStack,
     selectedSections,
     codingLevel,
-    showOptionalServices
+    complexityTier
   } = state;
 
   const categoryName = selectedCategory?.name || "Unspecified Category";
   const projectName = projectDetails.projectName || "Apex App";
   const styleName = selectedDesignStyle?.name || "Apple Minimal / Custom Style";
   const levelName = codingLevel || "beginner";
-  const serviceMode = showOptionalServices ? "Secure Backend APIs Enabled" : "Frontend Client Storage Only";
+  const serviceMode = complexityTier === "advanced" || complexityTier === "enterprise" ? "Secure Backend APIs Enabled" : "Frontend Client Storage Only";
 
   let modeDirective = "";
   if (activeMode === "General Assistant") {

@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function DesignStudioPage() {
   const [selectedStyle, setSelectedStyle] = useState(designStyles[0]);
+  const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [activeTab, setActiveTab] = useState<"dna" | "components" | "export" | "ai">("dna");
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [customAiPrompt, setCustomAiPrompt] = useState("");
@@ -158,7 +159,7 @@ export default function DesignStudioPage() {
             {/* Embedded Responsive Browser Simulator */}
             <div className="space-y-2">
               <span className="text-[10px] font-black uppercase text-black/50 block">THEME PREVIEW STUDIO RUN</span>
-              <ThemePreview style={selectedStyle} />
+              <ThemePreview style={selectedStyle} device={device} setDevice={setDevice} />
             </div>
 
             {/* Token Rulers & DNA Explorer tabs */}

@@ -1,6 +1,19 @@
 // ============================================================
 // MubixPrompts — TypeScript Interfaces for the Prompt Builder
+// SMART ADAPTIVE GENERATION ENGINE
 // ============================================================
+
+export interface ResumeData {
+  name: string;
+  bio: string;
+  skills: string[];
+  projects: { title: string; description: string; tech: string[]; url?: string }[];
+  companies: { name: string; role: string; duration: string; description?: string }[];
+  achievements: string[];
+  education: { institution: string; degree: string; year: string }[];
+  certifications: string[];
+  socialLinks: { platform: string; url: string }[];
+}
 
 export interface Category {
   id: string;
@@ -17,8 +30,6 @@ export interface ProjectDetails {
   targetAudience: string;
   country: string;
   language: string;
-  monetizationModel: string;
-  subscriptionModel: string;
   projectGoals: string;
 }
 
@@ -102,7 +113,20 @@ export type TechStackCategory =
   | 'charts';
 
 export type CodingLevel = 'non-technical' | 'beginner' | 'junior' | 'senior';
-export type BuilderMode = 'simple' | 'advanced';
+
+// ============================================================
+// NEW: Complexity Tier — Controls the entire generation pipeline
+// ============================================================
+export type ComplexityTier = 'simple' | 'standard' | 'advanced' | 'enterprise';
+
+// ============================================================
+// NEW: Deployment Configuration
+// ============================================================
+export interface DeploymentConfig {
+  githubRepoUrl: string;
+  deployTarget: 'vercel' | 'netlify' | 'none';
+  autoDeploy: boolean;
+}
 
 export interface BrandBuilder {
   logoType: string;
@@ -111,6 +135,9 @@ export interface BrandBuilder {
   faviconUrl?: string;
   heroMockupUrl?: string;
   themeReferenceUrl?: string;
+  brandColorsUrl?: string;
+  uiReferenceUrl?: string;
+  avatarUrl?: string;
 }
 
 export interface ApiCredentials {
@@ -127,6 +154,13 @@ export interface ApiCredentials {
   clerkSecretKey?: string;
   cloudinaryCloudName?: string;
   cloudinaryApiKey?: string;
+  razorpayKeyId?: string;
+  razorpayKeySecret?: string;
+  resendApiKey?: string;
+  openaiApiKey?: string;
+  anthropicApiKey?: string;
+  geminiApiKey?: string;
+  groqApiKey?: string;
 }
 
 export interface PresetPack {
@@ -138,75 +172,182 @@ export interface PresetPack {
   features: string[];
   techStack: string[];
   codingLevel: CodingLevel;
+  complexity: ComplexityTier;
   brand: BrandBuilder;
   apis: string[];
 }
 
+// ============================================================
+// Website Content — Category-Adaptive
+// ============================================================
+export interface WebsiteContent {
+  // Hero Architecture (universal)
+  hero: {
+    headline: string;
+    subheadline: string;
+    ctaText: string;
+    secondaryCtaText: string;
+    layoutType: "saas" | "portfolio" | "agency" | "minimal" | "split" | "bento";
+    includeTrustBadges: boolean;
+    includeStats: boolean;
+    includeAnnouncement: boolean;
+  };
+  
+  // About Architecture (universal)
+  about: {
+    title: string;
+    description: string;
+    story: string;
+    mission: string;
+    vision: string;
+    coreValues: string;
+  };
+  
+  // Pricing Architecture (SaaS/Enterprise ONLY)
+  pricing?: {
+    starterName: string;
+    starterPrice: string;
+    proName: string;
+    proPrice: string;
+    enterpriseName: string;
+    enterprisePrice: string;
+    billingType: "monthly" | "yearly" | "both";
+  };
+  
+  // Features / Content Toggles
+  features: {
+    enableBlog: boolean;
+    enableFAQ: boolean;
+    enableTestimonials: boolean;
+  };
+  
+  // Footer Architecture
+  footer: {
+    showEmail: boolean;
+    showPhone: boolean;
+    showAddress: boolean;
+    showCopyright: boolean;
+    showNavLinks: boolean;
+    showNewsletter: boolean;
+    showPrivacyPolicy: boolean;
+    showTerms: boolean;
+    emailAddress: string;
+    phoneNumber: string;
+    addressText: string;
+  };
+  
+  socials: {
+    instagram: string;
+    twitter: string;
+    linkedin: string;
+    github: string;
+    youtube: string;
+    dribbble: string;
+    behance: string;
+    facebook: string;
+    discord: string;
+    whatsapp: string;
+    telegram: string;
+  };
+  
+  // Navbar Architecture
+  navbar: {
+    links: string[];
+  };
+}
+
+// ============================================================
+// Builder State — Smart Adaptive Architecture
+// ============================================================
 export interface BuilderState {
   // Navigation
   currentStep: number;
   totalSteps: number;
   
-  // Builder Configuration
-  builderMode: BuilderMode;
+  // Complexity Tier (NEW — controls everything)
+  complexityTier: ComplexityTier;
+  
+  // Coder Level
   codingLevel: CodingLevel;
   
   // Step 1 — Category
   selectedCategory: Category | null;
+  categoryAnswers: Record<string, any>;
   
-  // Step 2 — Details
+  // Step 2 — Website Goals
+  websiteGoals: string[];
+  
+  // Step 3 — Brand Builder (merged details + brand)
   projectDetails: ProjectDetails;
-  
-  // Step 3 — Brand & Logo Settings
   brandBuilder: BrandBuilder;
   
   // Step 4 — Design Style
   selectedDesignStyle: DesignStyle | null;
   
-  // Step 5 — Features
-  selectedFeatures: string[]; // feature IDs
-  
-  // Step 6 — API Setup
-  setupApis: string[]; // selected APIs
-  apiCredentials: ApiCredentials;
-  
-  // Step 7 — AI Model
-  selectedAIModel: AIModel | null;
-  
-  // Step 8 — Tech Stack
-  selectedTechStack: string[]; // tech stack item IDs
-  
-  // New Upgraded SaaS Options
-  customThemePrompt: string;
-  showOptionalServices: boolean;
+  // Step 5 — Sections
   selectedSections: string[];
+  
+  // Step 6 — Content
+  websiteContent: WebsiteContent;
+  activeSocials: Record<string, boolean>;
+  
+  // Step 7 — Features
+  selectedFeatures: string[];
+  
+  // Step 8 — Advanced Systems (complexity >= advanced)
+  setupApis: string[];
+  apiCredentials: ApiCredentials;
+  activeSecurityRules: string[];
+  
+  // Step 9 — Generate
+  selectedAIModel: AIModel | null;
+  selectedTechStack: string[];
+  deploymentConfig: DeploymentConfig;
+  
+  // Custom/Override Options
+  customThemePrompt: string;
+  
+  // Resume Data (Portfolio category)
+  resumeData: ResumeData | null;
   
   // Prompt Output
   generatedPrompt: string;
   isGenerating: boolean;
   
+  // Smart State Management
+  rememberProject: boolean;
+  
   // Actions
   setStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
-  setBuilderMode: (mode: BuilderMode) => void;
+  setComplexityTier: (tier: ComplexityTier) => void;
   setCodingLevel: (level: CodingLevel) => void;
   setCategory: (category: Category) => void;
+  setCategoryAnswers: (answers: Record<string, any>) => void;
+  setWebsiteGoals: (goals: string[]) => void;
   setProjectDetails: (details: Partial<ProjectDetails>) => void;
   setBrandBuilder: (brand: Partial<BrandBuilder>) => void;
   setDesignStyle: (style: DesignStyle | null) => void;
+  setSectionsSequence: (sections: string[]) => void;
+  setWebsiteContent: (data: Partial<WebsiteContent>) => void;
+  toggleSocial: (platformId: string) => void;
+  setActiveSocials: (socials: Record<string, boolean>) => void;
   toggleFeature: (featureId: string) => void;
   setSelectedFeatures: (featureIds: string[]) => void;
   toggleApiSetup: (apiId: string) => void;
   setApiCredentials: (credentials: Partial<ApiCredentials>) => void;
+  toggleSecurityRule: (ruleId: string) => void;
   setAIModel: (model: AIModel) => void;
   toggleTechStack: (itemId: string) => void;
   setSelectedTechStack: (itemIds: string[]) => void;
+  setDeploymentConfig: (config: Partial<DeploymentConfig>) => void;
   setCustomThemePrompt: (prompt: string) => void;
-  setShowOptionalServices: (show: boolean) => void;
-  setSectionsSequence: (sections: string[]) => void;
+  setResumeData: (data: ResumeData | null) => void;
   setGeneratedPrompt: (prompt: string) => void;
   setIsGenerating: (generating: boolean) => void;
   applyPreset: (preset: PresetPack) => void;
-  resetBuilder: () => void;
+  resetBuilder: (preserveGeneratedPrompt?: boolean) => void;
+  setRememberProject: (remember: boolean) => void;
+  hydrateStore: () => void;
 }

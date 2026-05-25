@@ -14,6 +14,7 @@ export default function ThemeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
 
   const styleId = params?.theme as string;
 
@@ -98,7 +99,7 @@ export default function ThemeDetailPage() {
           {/* Left Column: Interactive Preview Frame */}
           <div className="lg:col-span-8 space-y-4">
             <span className="text-[10px] font-black uppercase text-black/50 block">THEME PREVIEW BROWSER</span>
-            <ThemePreview style={style} />
+            <ThemePreview style={style} device={device} setDevice={setDevice} />
           </div>
 
           {/* Right Column: DNA token specification sheets */}
