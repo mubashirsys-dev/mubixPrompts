@@ -75,8 +75,8 @@ export function ContentArchitectureStep() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start max-w-[95rem] mx-auto px-4">
-      {/* LEFT COLUMN: Input Forms */}
-      <div className="lg:col-span-6 space-y-6">
+      {/* LEFT COLUMN: Input Forms (40% width) */}
+      <div className="lg:col-span-5 space-y-6">
         <div className="bg-white border-4 border-black p-6 sm:p-8 shadow-[8px_8px_0px_0px_#000] space-y-6">
           
           {/* Title */}
@@ -570,14 +570,8 @@ export function ContentArchitectureStep() {
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Live Responsive Preview Sandbox */}
-      <div className="lg:col-span-6 lg:sticky lg:top-24 border-4 border-black bg-white p-5 shadow-[8px_8px_0px_0px_#000] space-y-4">
-        <div className="flex justify-between items-center border-b-2 border-black pb-2 mb-2">
-          <h3 className="font-black text-sm uppercase text-black flex items-center gap-1.5">
-            <Globe className="w-4 h-4 text-blue-600 animate-spin" />
-            Live Responsive Preview Sandbox
-          </h3>
-        </div>
+      {/* RIGHT COLUMN: Live Responsive Preview Sandbox (60% width) */}
+      <div className="lg:col-span-7 lg:sticky lg:top-24 w-full">
         <ThemePreview 
           style={selectedDesignStyle || designStyles[0]} 
           device={device} 

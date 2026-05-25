@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { DesignStyle } from "@/types/builder";
 import { useBuilderStore } from "@/store/builder-store";
 import {
@@ -429,6 +429,7 @@ interface ThemePreviewProps {
   style: DesignStyle;
   device: "desktop" | "tablet" | "mobile";
   setDevice: (device: "desktop" | "tablet" | "mobile") => void;
+  isStandalone?: boolean;
 }
 
 const renderSocialIcon = (id: string) => {
@@ -524,7 +525,7 @@ const renderSocialIcon = (id: string) => {
   }
 };
 
-export function ThemePreview({ style, device, setDevice }: ThemePreviewProps) {
+export function ThemePreview({ style, device, setDevice, isStandalone = false }: ThemePreviewProps) {
   const { selectedCategory, selectedSections, websiteContent, resumeData, activeSocials } = useBuilderStore();
   const isPortfolio = selectedCategory?.id === "portfolio";
 
@@ -538,6 +539,23 @@ export function ThemePreview({ style, device, setDevice }: ThemePreviewProps) {
   const [emailInput, setEmailInput] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [activePricingTier, setActivePricingTier] = useState<"starter" | "pro" | "enterprise">("pro");
+
+  // Dynamic Simulator ResizeObserver and Zoom/Scale states
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(800);
+  const [zoomScale, setZoomScale] = useState<number>(0.75);
+  const [isAutoFit, setIsAutoFit] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Dynamic window sizing detection for auto-fitting scaling factor calculations
   const [windowSize, setWindowSize] = useState({ width: 1200, height: 800 });
@@ -564,6 +582,17 @@ export function ThemePreview({ style, device, setDevice }: ThemePreviewProps) {
       document.body.style.overflow = "";
     };
   }, [isFullscreen]);
+
+  // Support ESC key to exit fullscreen mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const triggerRefresh = () => {
     setIsRefreshing(true);
@@ -882,38 +911,26 @@ export function ThemePreview({ style, device, setDevice }: ThemePreviewProps) {
 
   const css = getThemeClasses();
 
-  // Dynamic scaling presets for the workspace viewport frame
-  const getScaleFactor = (currentDevice: "desktop" | "tablet" | "mobile") => {
-    if (currentDevice === "desktop") return 0.42; 
-    if (currentDevice === "tablet") return 0.76;  
-    return 1.0;                            
-  };
+  // Active device widths
+  const activeDeviceWidth = device === "desktop" ? 1440 : device === "tablet" ? 768 : 390;
+  const activeModalDeviceWidth = modalDevice === "desktop" ? 1440 : modalDevice === "tablet" ? 768 : 390;
 
-  // Intelligent dynamic Auto-Fitting Scaling Factor computation for Modal views
-  const getDynamicModalScaleFactor = (currentDevice: "desktop" | "tablet" | "mobile") => {
-    // Workbench visible canvas bounds (approx 96px padding)
-    const targetCanvasWidth = Math.max(windowSize.width - 120, 360);
-    const targetCanvasHeight = Math.max(windowSize.height - 180, 480);
+  // Auto-fit calculations for workspace panel
+  const autoFitScale = useMemo(() => {
+    const pad = 48;
+    const scaleFactor = (containerWidth - pad) / activeDeviceWidth;
+    return Math.min(Math.max(scaleFactor, 0.15), 1.25);
+  }, [containerWidth, activeDeviceWidth]);
 
-    if (currentDevice === "desktop") {
-      // Scale to fit exactly ~85-92% of workbench width while keeping desktop aspect ratio
-      const widthScale = (targetCanvasWidth * 0.90) / 1440;
-      const heightScale = (targetCanvasHeight * 0.85) / 880;
-      return Math.min(widthScale, heightScale, 1.0);
-    }
-    if (currentDevice === "tablet") {
-      const widthScale = (targetCanvasWidth * 0.85) / 768;
-      const heightScale = (targetCanvasHeight * 0.85) / 1024;
-      return Math.min(widthScale, heightScale, 1.0);
-    }
-    // Mobile shell width is 414px
-    const widthScale = (targetCanvasWidth * 0.95) / 414;
-    const heightScale = (targetCanvasHeight * 0.85) / 840;
-    return Math.min(widthScale, heightScale, 1.0);
-  };
+  // Auto-fit calculations for fullscreen modal (workbench canvas width)
+  const autoFitModalScale = useMemo(() => {
+    const pad = 96;
+    const scaleFactor = (windowSize.width - pad) / activeModalDeviceWidth;
+    return Math.min(Math.max(scaleFactor, 0.15), 1.25);
+  }, [windowSize.width, activeModalDeviceWidth]);
 
-  const scale = getScaleFactor(device);
-  const activeModalScale = getDynamicModalScaleFactor(modalDevice);
+  const activeScale = isAutoFit ? autoFitScale : zoomScale;
+  const activeModalScale = isAutoFit ? autoFitModalScale : zoomScale;
 
   // Fully styled website sections components with custom responsive simulator state logic
   const renderWebsiteSections = (isModal: boolean, currentDev: "desktop" | "tablet" | "mobile") => {
@@ -1531,126 +1548,374 @@ export function ThemePreview({ style, device, setDevice }: ThemePreviewProps) {
             <span className="text-neutral-400 block">Prisma Registry</span>
           </div>
         </div>
-
       </div>
     );
   };
 
-  return (
-    <div className="space-y-4 relative w-full">
-      {/* Browser Shell Chrome header bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-zinc-950 text-white p-3 border-4 border-black shadow-[4px_4px_0px_0px_#000] z-20 relative">
-        
-        {/* Fake dots macOS traffic lights */}
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          <div className="w-3 h-3 rounded-full bg-[#FF6B6B]" />
-          <div className="w-3 h-3 rounded-full bg-[#FFD93D]" />
-          <div className="w-3 h-3 rounded-full bg-[#4ade80]" />
-          <span className="text-[9px] font-black uppercase text-white/50 tracking-widest ml-2">PREVIEW CONTROLS</span>
+  // Dedicated helper to trigger open in new tab
+  const handleOpenInNewTab = () => {
+    if (typeof window !== "undefined") {
+      window.open(`/preview/${style.id}`, "_blank");
+    }
+  };
+
+  const handleZoomIn = () => {
+    setIsAutoFit(false);
+    setZoomScale(prev => Math.min(prev + 0.05, 1.5));
+  };
+
+  const handleZoomOut = () => {
+    setIsAutoFit(false);
+    setZoomScale(prev => Math.max(prev - 0.05, 0.15));
+  };
+
+  const handleZoomReset = () => {
+    setIsAutoFit(false);
+    setZoomScale(1.0);
+  };
+
+  const toggleAutoFit = () => {
+    setIsAutoFit(prev => !prev);
+  };
+
+  // Helper to render the premium simulation header (56px Height)
+  const renderPremiumToolbar = (isFull: boolean, currentDevice: "desktop" | "tablet" | "mobile", updateDevice: (dev: "desktop" | "tablet" | "mobile") => void, onExit: () => void) => {
+    const activeWidth = currentDevice === "desktop" ? 1440 : currentDevice === "tablet" ? 768 : 390;
+    const activeHeight = currentDevice === "desktop" ? 900 : currentDevice === "tablet" ? 1024 : 844;
+
+    return (
+      <div className="h-[56px] min-h-[56px] w-full bg-zinc-950 text-white border-4 border-black flex justify-between items-center px-4 z-30 shadow-[4px_4px_0px_0px_#000] relative">
+        {/* LEFT: macOS traffic lights and status */}
+        <div className="flex items-center gap-2">
+          {isFull ? (
+            <button
+              onClick={onExit}
+              className="px-3 py-1 bg-red-500 hover:bg-red-600 text-black border-2 border-black font-black uppercase text-[10px] flex items-center gap-1 shadow-[2px_2px_0px_0px_#000] transition-all cursor-pointer"
+            >
+              ← Exit Preview
+            </button>
+          ) : (
+            <div className="flex items-center gap-1.5 mr-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#FF6B6B]" />
+              <div className="w-2.5 h-2.5 rounded-full bg-[#FFD93D]" />
+              <div className="w-2.5 h-2.5 rounded-full bg-[#4ade80]" />
+            </div>
+          )}
+          <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 hidden sm:inline-block ml-1">
+            {style.name} PREVIEW
+          </span>
           {Object.values(activeSocials).filter(Boolean).length > 0 && (
             <span className="ml-2 px-1.5 py-0.5 bg-emerald-500/20 border border-emerald-500 text-emerald-400 font-mono text-[7px] font-black uppercase tracking-wider animate-pulse rounded flex items-center gap-1 shrink-0">
               <span className="w-1 h-1 rounded-full bg-emerald-400" />
-              ✔ Preview Connected
+              Connected
             </span>
           )}
         </div>
 
-        {/* Device Viewport Resizer */}
-        <div className="flex items-center gap-1 bg-zinc-900 border border-white/10 p-1 rounded-md flex-wrap">
+        {/* CENTER: Responsive Viewport selectors */}
+        <div className="flex items-center gap-1 bg-zinc-900 border border-white/10 p-1 rounded-lg">
           <button
             type="button"
-            onClick={() => setDevice("desktop")}
-            className={`px-2.5 py-1 text-[8.5px] font-black uppercase transition-all rounded-md flex items-center gap-1 ${
-              device === "desktop" ? "bg-[#FFD93D] text-black" : "text-white/60 hover:text-white"
+            onClick={() => updateDevice("desktop")}
+            className={`px-3 py-1 rounded text-[9px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${
+              currentDevice === "desktop" ? "bg-[#FFD93D] text-black" : "text-white/60 hover:text-white"
             }`}
           >
-            <Monitor className="w-3 h-3" />
-            Desktop
+            <Monitor className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Desktop</span>
           </button>
           <button
             type="button"
-            onClick={() => setDevice("tablet")}
-            className={`px-2.5 py-1 text-[8.5px] font-black uppercase transition-all rounded-md flex items-center gap-1 ${
-              device === "tablet" ? "bg-[#FFD93D] text-black" : "text-white/60 hover:text-white"
+            onClick={() => updateDevice("tablet")}
+            className={`px-3 py-1 rounded text-[9px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${
+              currentDevice === "tablet" ? "bg-[#FFD93D] text-black" : "text-white/60 hover:text-white"
             }`}
           >
-            <Tablet className="w-3 h-3" />
-            Tablet
+            <Tablet className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Tablet</span>
           </button>
           <button
             type="button"
-            onClick={() => setDevice("mobile")}
-            className={`px-2.5 py-1 text-[8.5px] font-black uppercase transition-all rounded-md flex items-center gap-1 ${
-              device === "mobile" ? "bg-[#FFD93D] text-black" : "text-white/60 hover:text-white"
+            onClick={() => updateDevice("mobile")}
+            className={`px-3 py-1 rounded text-[9px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${
+              currentDevice === "mobile" ? "bg-[#FFD93D] text-black" : "text-white/60 hover:text-white"
             }`}
           >
-            <Smartphone className="w-3 h-3" />
-            Mobile
+            <Smartphone className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Mobile</span>
           </button>
         </div>
 
-        {/* Interactive Shell buttons */}
-        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-          {/* Active viewport metrics */}
-          <span className="text-[8px] font-mono text-white/40 uppercase tracking-widest bg-zinc-900 border border-white/5 px-2 py-0.5 rounded">
-            {device === "desktop" ? "1440 × 950 px" : device === "tablet" ? "768 × 950 px" : "390 × 750 px"}
+        {/* RIGHT: Zoom + Fullscreen + refresh controls */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Viewport size readout */}
+          <span className="text-[9px] font-mono text-white/40 bg-zinc-900 border border-white/5 px-2 py-0.5 rounded hidden md:inline-block">
+            {activeWidth} × {activeHeight}
           </span>
-          <div className="w-[1.5px] h-4 bg-white/20"></div>
-          
-          <button
-            type="button"
-            onClick={triggerRefresh}
-            className={`p-1 border border-white/10 hover:bg-white/10 text-white/60 hover:text-white transition-colors ${
-              isRefreshing ? "animate-spin" : ""
-            }`}
-            title="Refresh blueprint preview"
-          >
-            <RefreshCw className="w-3 h-3" />
-          </button>
-          
-          <button
-            type="button"
-            onClick={() => setIsFullscreen(true)}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-[#FFD93D] text-black font-black uppercase text-[8.5px] border-2 border-black shadow-[2.5px_2.5px_0px_0px_#000] active:translate-x-[0.5px] active:translate-y-[0.5px] active:shadow-none hover:bg-white transition-all cursor-pointer shrink-0"
-            title="Cinematic Fullscreen Mode"
-          >
-            <Maximize2 className="w-3 h-3 stroke-[3px]" />
-            <span>Fullscreen</span>
-          </button>
-        </div>
-      </div>
 
-      {/* Simulated Device Frame Container with Smart Cinematic Preview scaling and custom scrolling viewport */}
-      <div className="flex justify-center items-start border-4 border-black bg-[#F5F2EA] p-4 min-h-[460px] max-h-[620px] shadow-[4px_4px_0px_0px_#000] overflow-hidden relative">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${style.id}-${device}-${isRefreshing}`}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="relative"
-            style={{
-              width: device === "desktop" ? 1440 * scale : device === "tablet" ? 768 * scale : 390 * scale,
-              height: device === "desktop" ? 950 * scale : device === "tablet" ? 950 * scale : 750 * scale
-            }}
-          >
-            {/* Inner responsive frame scaled dynamically using CSS transforms so the complete trailer is perfectly visible and scrollable */}
-            <div
-              style={{
-                width: device === "desktop" ? 1440 : device === "tablet" ? 768 : 390,
-                height: device === "desktop" ? 950 : device === "tablet" ? 950 : 750,
-                transform: `scale(${scale})`,
-                transformOrigin: "top left"
-              }}
-              className={`border-4 border-black shadow-[6px_6px_0px_0px_#000] bg-white relative overflow-y-auto scrollbar-thin scroll-smooth ${
-                device === "mobile" ? "rounded-3xl" : "rounded-none"
+          <div className="w-[1px] h-4 bg-white/20 hidden md:block" />
+
+          {/* Zoom controls */}
+          <div className="flex items-center gap-1 bg-zinc-900 border border-white/10 p-0.5 rounded">
+            <button
+              onClick={handleZoomOut}
+              className="w-5 h-5 flex items-center justify-center text-[11px] font-black hover:bg-white/10 rounded cursor-pointer text-white/70 hover:text-white"
+              title="Zoom Out"
+            >
+              -
+            </button>
+            <button
+              onClick={handleZoomReset}
+              className="px-1 text-[8.5px] font-mono font-bold text-white/60 hover:text-white cursor-pointer"
+              title="Reset to 100%"
+            >
+              {Math.round(activeScale * 100)}%
+            </button>
+            <button
+              onClick={handleZoomIn}
+              className="w-5 h-5 flex items-center justify-center text-[11px] font-black hover:bg-white/10 rounded cursor-pointer text-white/70 hover:text-white"
+              title="Zoom In"
+            >
+              +
+            </button>
+            <button
+              onClick={toggleAutoFit}
+              className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider cursor-pointer ${
+                isAutoFit ? "bg-[#0052FF] text-white" : "text-white/40 hover:text-white"
               }`}
             >
-              {renderWebsiteSections(false, device)}
+              Fit
+            </button>
+          </div>
+
+          <div className="w-[1px] h-4 bg-white/20" />
+
+          {/* Standalone Route trigger */}
+          <button
+            onClick={handleOpenInNewTab}
+            className="p-1.5 border border-white/10 hover:bg-white/10 text-white/60 hover:text-white transition-colors rounded cursor-pointer"
+            title="Open in Isolated standalone tab"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Reload trigger */}
+          <button
+            onClick={triggerRefresh}
+            className={`p-1.5 border border-white/10 hover:bg-white/10 text-white/60 hover:text-white transition-colors rounded cursor-pointer ${
+              isRefreshing ? "animate-spin" : ""
+            }`}
+            title="Refresh responsive canvas"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Fullscreen toggle (hidden if standalone) */}
+          {!isStandalone && (
+            <button
+              onClick={() => {
+                if (isFull) {
+                  setIsFullscreen(false);
+                } else {
+                  setModalDevice(device);
+                  setIsFullscreen(true);
+                }
+              }}
+              className="p-1.5 bg-[#FFD93D] hover:bg-white text-black border border-black shadow-[1.5px_1.5px_0px_0px_#000] font-black uppercase transition-all cursor-pointer flex items-center rounded"
+            >
+              <Maximize2 className="w-3.5 h-3.5 stroke-[3px]" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Helper to render the realistic browser framework
+  const renderSimulatedCanvas = (currentDev: "desktop" | "tablet" | "mobile", scaleVal: number) => {
+    const isMobile = currentDev === "mobile";
+    const isTablet = currentDev === "tablet";
+
+    if (isMobile) {
+      return (
+        <motion.div
+          key="mobile-shell"
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: scaleVal }}
+          transition={{ duration: 0.2 }}
+          className="relative border-[12px] border-zinc-950 rounded-[44px] shadow-[0_25px_60px_-12px_rgba(0,0,0,0.85)] bg-zinc-900 overflow-hidden flex flex-col shrink-0"
+          style={{
+            width: 414,
+            height: 840,
+            transformOrigin: "top center"
+          }}
+        >
+          {/* Dynamic Island Notch */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-6 bg-black rounded-2xl z-30 flex items-center justify-between px-3 text-[7px] text-white/90 font-mono select-none">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
+            <span className="font-bold tracking-widest text-[6px]">MUBIX: OK</span>
+            <span className="text-[#FFD93D] text-[6px] animate-pulse">LIVE</span>
+          </div>
+          
+          {/* Simulated Phone status bar */}
+          <div className="flex justify-between px-6 pt-2.5 pb-1.5 text-[8px] font-bold text-neutral-400 font-mono bg-white border-b border-neutral-100 z-20 select-none">
+            <span>09:41</span>
+            <div className="flex items-center gap-1">
+              <span>5G</span>
+              <div className="w-4 h-2 border border-neutral-400 rounded-sm p-[1px] flex items-center">
+                <div className="bg-neutral-400 h-full w-4/5 rounded-2xs" />
+              </div>
             </div>
-          </motion.div>
-        </AnimatePresence>
+          </div>
+
+          {/* Scrollable phone viewport */}
+          <div className="w-full flex-1 overflow-y-auto scrollbar-thin scroll-smooth bg-white">
+            {renderWebsiteSections(false, "mobile")}
+          </div>
+
+          {/* Home indicator bar */}
+          <div className="bg-white pb-2 pt-1 flex justify-center border-t border-neutral-100 z-20">
+            <div className="w-28 h-1 bg-black rounded-full" />
+          </div>
+        </motion.div>
+      );
+    }
+
+    if (isTablet) {
+      return (
+        <motion.div
+          key="tablet-shell"
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: scaleVal }}
+          transition={{ duration: 0.2 }}
+          className="relative border-[14px] border-zinc-950 rounded-[38px] shadow-[0_25px_60px_-12px_rgba(0,0,0,0.85)] bg-[#0c0c0f] overflow-hidden flex flex-col shrink-0"
+          style={{
+            width: 768,
+            height: 1024,
+            transformOrigin: "top center"
+          }}
+        >
+          {/* iPad Camera lens */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-2 h-2 bg-zinc-800 rounded-full border border-zinc-700 z-30" />
+
+          {/* iPad Status Bar */}
+          <div className="flex justify-between px-6 py-1.5 text-[9px] font-bold text-neutral-400 bg-white border-b border-neutral-100 select-none z-20">
+            <span>10:00 AM</span>
+            <div className="flex items-center gap-1.5">
+              <span>iPad OS 18</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          {/* iPad Scrollable content */}
+          <div className="w-full flex-1 overflow-y-auto scrollbar-thin scroll-smooth bg-white">
+            {renderWebsiteSections(false, "tablet")}
+          </div>
+
+          {/* iPad home indicator */}
+          <div className="bg-white pb-2 pt-1 flex justify-center border-t border-neutral-100 z-20">
+            <div className="w-32 h-1 bg-black rounded-full" />
+          </div>
+        </motion.div>
+      );
+    }
+
+    // DESKTOP MODE BROWSER FRAME
+    return (
+      <motion.div
+        key="desktop-shell"
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: scaleVal }}
+        transition={{ duration: 0.2 }}
+        className="relative flex flex-col border-[6px] border-zinc-800 rounded-2xl shadow-[0_30px_70px_rgba(0,0,0,0.8)] bg-[#121216] overflow-hidden shrink-0"
+        style={{
+          width: 1440,
+          height: 900,
+          transformOrigin: "top center"
+        }}
+      >
+        {/* Browser top-bar chrome */}
+        <div className="bg-[#121216] text-white p-3 flex items-center justify-between border-b border-white/5 select-none z-20">
+          <div className="flex items-center gap-2 w-20">
+            <div className="w-3 h-3 rounded-full bg-[#FF6B6B]" />
+            <div className="w-3 h-3 rounded-full bg-[#FFD93D]" />
+            <div className="w-3 h-3 rounded-full bg-[#4ade80]" />
+          </div>
+
+          <div className="flex-1 max-w-lg bg-zinc-900 border border-white/10 rounded-lg px-4 py-1 flex items-center justify-between text-white/50 text-[10px] font-mono shadow-inner">
+            <div className="flex items-center gap-2 truncate">
+              <Globe className="w-3.5 h-3.5 text-emerald-400" />
+              <span>https://mubixprompts.ai/preview/{style.id}</span>
+            </div>
+            <span className="px-1.5 py-0.2 bg-zinc-850 text-white/40 rounded text-[7.5px]">SECURE</span>
+          </div>
+
+          <div className="flex items-center gap-2 justify-end w-20 text-white/40 text-[9px] font-bold">
+            <span>1440px</span>
+          </div>
+        </div>
+
+        {/* Scrollable content container */}
+        <div className="w-full flex-1 overflow-y-auto scrollbar-thin scroll-smooth bg-white z-10">
+          {renderWebsiteSections(false, "desktop")}
+        </div>
+      </motion.div>
+    );
+  };
+
+  // If isStandalone is true, render the native fullscreen workbench directly on the screen
+  if (isStandalone) {
+    return (
+      <div className="flex-1 w-full h-full flex flex-col overflow-hidden bg-[#08080a]">
+        {/* Standalone sticky top bar */}
+        {renderPremiumToolbar(true, device, setDevice, () => {
+          if (typeof window !== "undefined") {
+            window.location.href = "/design-studio";
+          }
+        })}
+
+        {/* Immersive Sandbox Workbench Canvas */}
+        <div
+          ref={containerRef}
+          className="flex-1 w-full bg-[#08080a] bg-[radial-gradient(#1e1e24_1.2px,transparent_1.2px)] [background-size:16px_16px] flex justify-center items-start p-6 overflow-y-auto scrollbar-thin relative"
+        >
+          <div 
+            style={{ 
+              width: device === "desktop" ? 1440 * activeScale : device === "tablet" ? 768 * activeScale : 414 * activeScale,
+              height: device === "desktop" ? 900 * activeScale : device === "tablet" ? 1024 * activeScale : 840 * activeScale,
+              transition: "width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
+            }}
+            className="flex justify-center"
+          >
+            {renderSimulatedCanvas(device, activeScale)}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full flex flex-col space-y-4">
+      {/* 56px height primary simulator header */}
+      {renderPremiumToolbar(false, device, setDevice, () => {})}
+
+      {/* Main Simulation Viewport Sandbox */}
+      <div
+        ref={containerRef}
+        className="w-full min-h-[650px] h-[720px] bg-[#08080a] bg-[radial-gradient(#1e1e24_1.2px,transparent_1.2px)] [background-size:16px_16px] border-4 border-black shadow-[4px_4px_0px_0px_#000] overflow-y-auto scrollbar-thin p-4 flex justify-center items-start relative rounded-none"
+      >
+        <div
+          style={{ 
+            width: device === "desktop" ? 1440 * activeScale : device === "tablet" ? 768 * activeScale : 414 * activeScale,
+            height: device === "desktop" ? 900 * activeScale : device === "tablet" ? 1024 * activeScale : 840 * activeScale,
+            transition: "width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
+          }}
+          className="flex justify-center"
+        >
+          <AnimatePresence mode="wait">
+            {renderSimulatedCanvas(device, activeScale)}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Cinematic Fullscreen Modal */}
@@ -1660,204 +1925,28 @@ export function ThemePreview({ style, device, setDevice }: ThemePreviewProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-[#060608]/98 backdrop-blur-lg z-[9999] flex flex-col w-screen h-screen overflow-hidden"
+            className="fixed inset-0 bg-[#060608]/99 backdrop-blur-xl z-[9999] flex flex-col w-screen h-screen overflow-hidden"
           >
-            {/* Immersive Top Bar */}
-            <div className="bg-[#0c0c10] text-white p-4 flex flex-col sm:flex-row justify-between items-center border-b-4 border-black shrink-0 gap-3 z-30 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <Star className="w-5 h-5 text-[#FFD93D] fill-current animate-pulse" />
-                <span className="font-black text-sm uppercase tracking-wider text-white">
-                  {style.name.toUpperCase()} REAL RESPONSIVE SANDBOX
-                </span>
-                <span className="px-2 py-0.5 bg-[#0052FF] text-white border border-black font-black uppercase text-[7.5px] tracking-wide rounded shadow-[1px_1px_0px_0px_#000]">
-                  {style.id.toUpperCase()} STUDIO
-                </span>
-                {Object.values(activeSocials).filter(Boolean).length > 0 && (
-                  <span className="px-1.5 py-0.5 bg-emerald-500/20 border border-emerald-500 text-emerald-400 font-mono text-[7.5px] font-black uppercase tracking-wider animate-pulse rounded flex items-center gap-1 shrink-0">
-                    <span className="w-1 h-1 rounded-full bg-emerald-400" />
-                    ✔ Preview Connected
-                  </span>
-                )}
-              </div>
+            {/* Top Toolbar in Fullscreen Mode */}
+            {renderPremiumToolbar(true, modalDevice, setModalDevice, () => setIsFullscreen(false))}
 
-              {/* Integrated Device Toggler */}
-              <div className="flex items-center gap-2 bg-zinc-900 border border-white/10 p-1.5 rounded-lg shadow-inner">
-                <button
-                  onClick={() => setModalDevice("desktop")}
-                  className={`px-4 py-1.5 rounded-md flex items-center gap-1.5 text-[9.5px] font-black uppercase transition-all cursor-pointer ${
-                    modalDevice === "desktop" ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white"
-                  }`}
-                >
-                  <Monitor className="w-3.5 h-3.5" />
-                  Desktop
-                </button>
-                <button
-                  onClick={() => setModalDevice("tablet")}
-                  className={`px-4 py-1.5 rounded-md flex items-center gap-1.5 text-[9.5px] font-black uppercase transition-all cursor-pointer ${
-                    modalDevice === "tablet" ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white"
-                  }`}
-                >
-                  <Tablet className="w-3.5 h-3.5" />
-                  Tablet
-                </button>
-                <button
-                  onClick={() => setModalDevice("mobile")}
-                  className={`px-4 py-1.5 rounded-md flex items-center gap-1.5 text-[9.5px] font-black uppercase transition-all cursor-pointer ${
-                    modalDevice === "mobile" ? "bg-white text-black shadow-md" : "text-white/60 hover:text-white"
-                  }`}
-                >
-                  <Smartphone className="w-3.5 h-3.5" />
-                  Mobile
-                </button>
-              </div>
-
-              {/* Exit Fullscreen Close Button */}
-              <button
-                type="button"
-                onClick={() => setIsFullscreen(false)}
-                className="bg-[#FF6B6B] border-2 border-black px-4 py-2 text-xs font-black uppercase flex items-center gap-1.5 hover:bg-red-500 shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px] active:shadow-none transition-all text-black cursor-pointer"
-              >
-                <Minimize2 className="w-4 h-4 text-black" />
-                Exit Fullscreen
-              </button>
-            </div>
-
-            {/* Immersive Sandbox Workbench Canvas - FIXED HEIGHT VIEWPORTS, INTERNAL SCROLLS */}
+            {/* Fullscreen Sandbox Workbench Canvas */}
             <div
-              id="workbench-canvas"
-              className="flex-1 w-full bg-[#08080a] bg-[radial-gradient(#1e1e24_1.2px,transparent_1.2px)] [background-size:16px_16px] flex items-center justify-center p-6 md:p-12 overflow-hidden relative"
+              className="flex-1 w-full bg-[#08080a] bg-[radial-gradient(#1e1e24_1.2px,transparent_1.2px)] [background-size:16px_16px] flex justify-center items-start p-8 overflow-y-auto scrollbar-thin relative"
             >
-              
-              <AnimatePresence mode="wait">
-                {modalDevice === "mobile" ? (
-                  // HIGHLY REALISTIC IPHONE 15 PRO SHELL for absolute WOW factor in mobile preview
-                  <motion.div
-                    key="phone-shell"
-                    initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                    animate={{ opacity: 1, scale: activeModalScale, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: -30 }}
-                    transition={{ duration: 0.3 }}
-                    className="relative border-[12px] border-zinc-950 rounded-[44px] shadow-[0_25px_60px_-12px_rgba(0,0,0,0.8)] bg-zinc-900 overflow-hidden flex flex-col shrink-0"
-                    style={{
-                      width: 414,
-                      height: 840,
-                      transformOrigin: "center center"
-                    }}
-                  >
-                    {/* Dynamic Island Notch */}
-                    <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-6 bg-black rounded-2xl z-30 flex items-center justify-between px-3 text-[7px] text-white/90 font-mono select-none">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
-                      <span className="font-bold tracking-widest text-[6px]">MUBIX DNA: OK</span>
-                      <span className="text-yellow-400 text-[6px] animate-pulse">LIVE</span>
-                    </div>
-                    
-                    {/* Simulated Phone status bar */}
-                    <div className="flex justify-between px-6 pt-2 pb-1.5 text-[8.5px] font-bold text-neutral-400 font-mono bg-white border-b border-neutral-100 z-20 select-none">
-                      <span>09:41</span>
-                      <div className="flex items-center gap-1">
-                        <span>5G</span>
-                        <div className="w-4 h-2.5 border border-neutral-400 rounded-sm p-[1px] flex items-center">
-                          <div className="bg-neutral-400 h-full w-4/5 rounded-2xs" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Scrollable phone viewport browser - TERMINATES FOOTER PERFECTLY */}
-                    <div className="w-full flex-1 overflow-y-auto scrollbar-thin scroll-smooth bg-white">
-                      {renderWebsiteSections(true, "mobile")}
-                    </div>
-
-                    {/* Bottom home indicator pill */}
-                    <div className="bg-white pb-2 pt-1 flex justify-center border-t border-neutral-55 z-20">
-                      <div className="w-28 h-1 bg-black rounded-full" />
-                    </div>
-                  </motion.div>
-                ) : modalDevice === "tablet" ? (
-                  // HIGHLY REALISTIC PORTRAIT IPAD PRO MOCKUP SHELL
-                  <motion.div
-                    key="tablet-shell"
-                    initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                    animate={{ opacity: 1, scale: activeModalScale, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: -30 }}
-                    transition={{ duration: 0.3 }}
-                    className="relative border-[14px] border-zinc-950 rounded-[38px] shadow-[0_25px_60px_-12px_rgba(0,0,0,0.8)] bg-[#0c0c0f] overflow-hidden flex flex-col shrink-0"
-                    style={{
-                      width: 768,
-                      height: 1024,
-                      transformOrigin: "center center"
-                    }}
-                  >
-                    {/* iPad camera dot */}
-                    <div className="absolute top-3 left-1/2 -translate-x-1/2 w-2 h-2 bg-zinc-800 rounded-full border border-zinc-700 z-30" />
-
-                    {/* iPad Status Bar */}
-                    <div className="flex justify-between px-6 py-1.5 text-[9px] font-bold text-neutral-400 bg-white border-b border-neutral-100 select-none z-20">
-                      <span>10:00 AM</span>
-                      <div className="flex items-center gap-1.5">
-                        <span>iPad OS 18</span>
-                        <span>100%</span>
-                      </div>
-                    </div>
-
-                    {/* iPad Scrollable content - TERMINATES FOOTER PERFECTLY */}
-                    <div className="w-full flex-1 overflow-y-auto scrollbar-thin scroll-smooth bg-white">
-                      {renderWebsiteSections(true, "tablet")}
-                    </div>
-
-                    {/* iPad home indicator */}
-                    <div className="bg-white pb-2 pt-1 flex justify-center border-t border-neutral-55 z-20">
-                      <div className="w-32 h-1 bg-black rounded-full" />
-                    </div>
-                  </motion.div>
-                ) : (
-                  // HIGHLY IMMERSIVE DESKTOP BROWSER FRAME MOCKUP (Arc Browser / Safari Hybrid)
-                  <motion.div
-                    key="desktop-shell"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: activeModalScale }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.25 }}
-                    className="relative flex flex-col border-[6px] border-zinc-800 rounded-2xl shadow-[0_30px_70px_rgba(0,0,0,0.8)] bg-[#121216] overflow-hidden shrink-0"
-                    style={{
-                      width: 1440,
-                      height: 880,
-                      transformOrigin: "center center"
-                    }}
-                  >
-                    {/* Browser top-bar chrome */}
-                    <div className="bg-[#121216] text-white p-3 flex items-center justify-between border-b border-white/5 select-none z-20">
-                      {/* traffic lights */}
-                      <div className="flex items-center gap-2 w-20">
-                        <div className="w-3.5 h-3.5 rounded-full bg-[#FF6B6B]" />
-                        <div className="w-3.5 h-3.5 rounded-full bg-[#FFD93D]" />
-                        <div className="w-3.5 h-3.5 rounded-full bg-[#4ade80]" />
-                      </div>
-
-                      {/* address bar */}
-                      <div className="flex-1 max-w-lg bg-zinc-900 border border-white/10 rounded-lg px-4 py-1 flex items-center justify-between text-white/50 text-[10px] font-mono shadow-inner">
-                        <div className="flex items-center gap-2 truncate">
-                          <Globe className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>https://mubixprompts.ai/preview/{style.id}</span>
-                        </div>
-                        <span className="px-1.5 py-0.2 bg-zinc-850 text-white/40 rounded text-[7.5px]">SECURE</span>
-                      </div>
-
-                      {/* settings icons */}
-                      <div className="flex items-center gap-2 justify-end w-20 text-white/40 text-[9px] font-bold">
-                        <span>1440px</span>
-                      </div>
-                    </div>
-
-                    {/* Desktop simulated viewport - TERMINATES FOOTER PERFECTLY WITH ZERO TRAILING WHITESPACES */}
-                    <div className="w-full flex-1 overflow-y-auto scrollbar-thin scroll-smooth bg-white z-10">
-                      {renderWebsiteSections(true, "desktop")}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
+              <div
+                style={{ 
+                  width: modalDevice === "desktop" ? 1440 * activeModalScale : modalDevice === "tablet" ? 768 * activeModalScale : 414 * activeModalScale,
+                  height: modalDevice === "desktop" ? 900 * activeModalScale : modalDevice === "tablet" ? 1024 * activeModalScale : 840 * activeModalScale,
+                  transition: "width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
+                }}
+                className="flex justify-center"
+              >
+                <AnimatePresence mode="wait">
+                  {renderSimulatedCanvas(modalDevice, activeModalScale)}
+                </AnimatePresence>
+              </div>
             </div>
-
           </motion.div>
         )}
       </AnimatePresence>

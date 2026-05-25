@@ -272,194 +272,128 @@ export function DesignStep() {
       </div>
 
       {/* ==================================================== */}
-      {/* 3-COLUMN CORE WORKSPACE BOARD */}
+      {/* 2-COLUMN COHESIVE FIGMA-LIKE WORKSPACE BOARD */}
       {/* ==================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* ---------------------------------------------------- */}
-        {/* COLUMN 1: LEFT SIDEBAR (25%) - THEME CARD DIRECTORY (col-span-3) */}
+        {/* LEFT COLUMN: Controls & Configurations (col-span-5, 40%) */}
         {/* ---------------------------------------------------- */}
-        <div className="lg:col-span-3 space-y-3.5 max-h-[560px] overflow-y-auto pr-2 scrollbar-thin">
-          <div className="flex items-center justify-between border-b-2 border-black pb-1.5">
-            <span className="text-[9px] font-black uppercase text-black/55 tracking-wider">AVAILABLE SYSTEM DNA ({filteredAndSortedStyles.length})</span>
-            <span className="text-[7.5px] font-black uppercase text-emerald-600 bg-emerald-50 px-2 py-0.5 border border-emerald-600/30">VERIFIED ORIGINAL</span>
-          </div>
-
-          <AnimatePresence mode="popLayout">
-            {filteredAndSortedStyles.length > 0 ? (
-              filteredAndSortedStyles.map((style) => {
-                const isSelected = activeStyle.id === style.id;
-                const Icon = styleIcons[style.id] || Layers;
-                const metaInfo = styleMetadata[style.id] || { tags: [], bestFor: "SaaS", complexity: "Sophisticated", score: "95%", badge: "" };
-
-                return (
-                  <motion.div
-                    layoutId={`theme-card-${style.id}`}
-                    key={style.id}
-                    onClick={() => setDesignStyle(style)}
-                    className={`w-full text-left p-3.5 border-4 transition-all duration-150 flex flex-col gap-3 relative shadow-[3.5px_3.5px_0px_0px_#000] cursor-pointer hover:shadow-[5px_5px_0px_0px_#000] ${
-                      isSelected
-                        ? "bg-[#C4B5FD] text-black border-black shadow-none translate-y-[1.5px]"
-                        : "bg-white border-black text-black"
-                    }`}
-                  >
-                    {/* Visual Quality Badge */}
-                    {metaInfo.badge && (
-                      <div className="absolute -top-2 right-2 rotate-[1deg] z-10">
-                        <span className="px-1.5 py-0.5 bg-[#FF6B6B] text-white border border-black font-black uppercase text-[7px] tracking-widest shadow-[1px_1px_0px_0px_#000]">
-                          {metaInfo.badge}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Left Swatch header row */}
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className="w-9 h-9 border-2 border-black flex items-center justify-center shadow-[1px_1px_0px_0px_#000] shrink-0"
-                        style={{ background: style.preview }}
-                      >
-                        <Icon className="w-3.5 h-3.5 text-black stroke-[3px] bg-white/70 p-0.5 rounded border border-black/10" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h3 className="font-black uppercase text-[11px] text-black tracking-tight">{style.name}</h3>
-                          {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B6B] animate-ping" />}
-                        </div>
-                        <span className="text-[7px] font-black uppercase text-black/50 tracking-wider">
-                          Score: {metaInfo.score} • {style.typography.heading}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Short explanation */}
-                    <p className="text-[10px] font-bold text-black/75 leading-relaxed line-clamp-2">
-                      {style.description}
-                    </p>
-
-                    {/* Swatches preview */}
-                    <div className="flex justify-between items-center border-t border-black/10 pt-2 shrink-0">
-                      <span className="text-[7.5px] font-black bg-neutral-100 border border-black/15 px-1.5 py-0.5 font-mono text-black/60">
-                        {metaInfo.complexity}
-                      </span>
-                      <div className="flex gap-1">
-                        {Object.values(style.colors).slice(0, 3).map((c, idx) => (
-                          <div
-                            key={idx}
-                            className="w-3 h-3 rounded-full border border-black/20"
-                            style={{ backgroundColor: c }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                  </motion.div>
-                );
-              })
-            ) : (
-              <div className="border-4 border-dashed border-black p-8 text-center bg-white space-y-2">
-                <Search className="w-8 h-8 text-black/40 mx-auto stroke-[2.5px]" />
-                <span className="text-xs font-black uppercase text-black/60 block">NO ALIGNED THEMES FOUND</span>
-                <p className="text-[10px] text-black/40 font-bold">Refine your search descriptors or filters query.</p>
-              </div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* ---------------------------------------------------- */}
-        {/* COLUMN 2: CENTER PREVIEW AREA (55%) (col-span-6) */}
-        {/* ---------------------------------------------------- */}
-        <div className="lg:col-span-6 space-y-4">
-          <ThemePreview style={activeStyle} device={device} setDevice={setDevice} />
-        </div>
-
-        {/* ---------------------------------------------------- */}
-        {/* COLUMN 3: RIGHT SIDEBAR (20%) (col-span-3) */}
-        {/* ---------------------------------------------------- */}
-        <div className="lg:col-span-3 space-y-3.5 lg:sticky lg:top-24">
+        <div className="lg:col-span-5 space-y-6">
           
-          {/* Compact Metadata Card */}
-          <div className="border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_#000] space-y-2.5">
-            <span className="neo-sticker bg-[#FFD93D] text-[8.5px] font-black uppercase tracking-wide">SYSTEM METADATA</span>
-            
-            <div className="space-y-2 text-xs font-bold pt-1.5 border-t border-black/10">
-              <div className="flex justify-between items-center">
-                <span className="text-black/55 text-[10.5px]">Selected Theme:</span>
-                <span className="font-black text-black uppercase text-[10.5px] truncate max-w-[110px]">{activeStyle.name}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-black/55 text-[10.5px]">Typography DNA:</span>
-                <span className="font-black text-neutral-800 text-[10px] bg-neutral-100 border border-black/15 px-1.5 py-0.5 rounded font-mono truncate max-w-[120px]" title={activeStyle.typography.heading}>
-                  {activeStyle.typography.heading}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-black/55 text-[10.5px]">Complexity:</span>
-                <span className="font-black text-black uppercase text-[10.5px]">{meta.complexity}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-black/55 text-[10.5px]">Quality Score:</span>
-                <span className="font-black text-emerald-600 text-[10.5px]">{meta.score} Excellent</span>
-              </div>
+          {/* Swatches Deck: Style Theme Selection Card Directory */}
+          <div className="bg-white border-4 border-black p-5 shadow-[4px_4px_0px_0px_#000] space-y-4">
+            <div className="flex items-center justify-between border-b-2 border-black pb-2">
+              <span className="text-[9.5px] font-black uppercase text-black tracking-wider">AVAILABLE SYSTEM DNA ({filteredAndSortedStyles.length})</span>
+              <span className="text-[7.5px] font-black uppercase text-emerald-600 bg-emerald-50 px-2 py-0.5 border border-emerald-600/30">VERIFIED ORIGINAL</span>
+            </div>
+
+            <div className="space-y-3.5 max-h-[360px] overflow-y-auto pr-1.5 scrollbar-thin">
+              <AnimatePresence mode="popLayout">
+                {filteredAndSortedStyles.length > 0 ? (
+                  filteredAndSortedStyles.map((style) => {
+                    const isSelected = activeStyle.id === style.id;
+                    const Icon = styleIcons[style.id] || Layers;
+                    const metaInfo = styleMetadata[style.id] || { tags: [], bestFor: "SaaS", complexity: "Sophisticated", score: "95%", badge: "" };
+
+                    return (
+                      <motion.div
+                        layoutId={`theme-card-${style.id}`}
+                        key={style.id}
+                        onClick={() => setDesignStyle(style)}
+                        className={`w-full text-left p-3.5 border-4 transition-all duration-150 flex flex-col gap-3 relative shadow-[3.5px_3.5px_0px_0px_#000] cursor-pointer hover:shadow-[5px_5px_0px_0px_#000] ${
+                          isSelected
+                            ? "bg-[#C4B5FD] text-black border-black shadow-none translate-y-[1.5px]"
+                            : "bg-white border-black text-black"
+                        }`}
+                      >
+                        {/* Visual Quality Badge */}
+                        {metaInfo.badge && (
+                          <div className="absolute -top-2 right-2 rotate-[1deg] z-10">
+                            <span className="px-1.5 py-0.5 bg-[#FF6B6B] text-white border border-black font-black uppercase text-[7px] tracking-widest shadow-[1px_1px_0px_0px_#000]">
+                              {metaInfo.badge}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Left Swatch header row */}
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className="w-9 h-9 border-2 border-black flex items-center justify-center shadow-[1px_1px_0px_0px_#000] shrink-0"
+                            style={{ background: style.preview }}
+                          >
+                            <Icon className="w-3.5 h-3.5 text-black stroke-[3px] bg-white/70 p-0.5 rounded border border-black/10" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <h3 className="font-black uppercase text-[11px] text-black tracking-tight">{style.name}</h3>
+                              {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B6B] animate-ping" />}
+                            </div>
+                            <span className="text-[7px] font-black uppercase text-black/50 tracking-wider">
+                              Score: {metaInfo.score} • {style.typography.heading}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Short explanation */}
+                        <p className="text-[10px] font-bold text-black/75 leading-relaxed line-clamp-2">
+                          {style.description}
+                        </p>
+
+                        {/* Swatches preview */}
+                        <div className="flex justify-between items-center border-t border-black/10 pt-2 shrink-0">
+                          <span className="text-[7.5px] font-black bg-neutral-100 border border-black/15 px-1.5 py-0.5 font-mono text-black/60">
+                            {metaInfo.complexity}
+                          </span>
+                          <div className="flex gap-1">
+                            {Object.values(style.colors).slice(0, 3).map((c, idx) => (
+                              <div
+                                key={idx}
+                                className="w-3 h-3 rounded-full border border-black/20"
+                                style={{ backgroundColor: c }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                      </motion.div>
+                    );
+                  })
+                ) : (
+                  <div className="border-4 border-dashed border-black p-8 text-center bg-white space-y-2">
+                    <Search className="w-8 h-8 text-black/40 mx-auto stroke-[2.5px]" />
+                    <span className="text-xs font-black uppercase text-black/60 block">NO ALIGNED THEMES FOUND</span>
+                    <p className="text-[10px] text-black/40 font-bold">Refine your search descriptors or filters query.</p>
+                  </div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
-          {/* Theme Insight block */}
-          <div className="border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_#000] space-y-2">
-            <h4 className="text-[10px] font-black uppercase text-black flex items-center gap-1.5">
-              <Info className="w-3.5 h-3.5 text-blue-500 stroke-[3px]" />
-              THEME DEEP INSIGHTS
-            </h4>
-            <p className="text-[10.5px] font-bold text-neutral-600 leading-relaxed italic">
-              "{meta.explanation}"
-            </p>
-          </div>
-
-          {/* Context DNA & AI recommendations */}
-          <div className="border-4 border-black bg-zinc-950 text-white p-4 shadow-[4px_4px_0px_0px_#000] space-y-2">
-            <span className="text-[8px] font-mono tracking-widest text-[#FFD93D] uppercase block">AI RECOMMENDATION</span>
-            <p className="text-[10px] font-bold text-white/80 leading-relaxed italic">
-              Pairing the **{activeStyle.name}** visual DNA with a custom brand prompt will generate an extremely cohesive layout logic.
-            </p>
-          </div>
-
-          {/* Workspace Telemetry */}
-          <div className="border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_#000] space-y-2">
-            <span className="text-[8px] font-black text-black/55 uppercase tracking-wider block">WORKSPACE TELEMETRY</span>
-            
-            <div className="space-y-1.5 text-xs font-bold pt-1.5 border-t border-black/10">
-              <div className="flex justify-between items-center">
-                <span className="text-black/55 text-[10px] flex items-center gap-1"><Activity className="w-3 h-3" /> Compiler:</span>
-                <span className="font-black text-green-600 uppercase text-[9.5px]">Ready</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-black/55 text-[10px] flex items-center gap-1"><Database className="w-3 h-3" /> Queued:</span>
-                <span className="font-black text-black uppercase text-[9.5px]">{selectedSections.length} Sections</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-black/55 text-[10px] flex items-center gap-1"><Shield className="w-3 h-3" /> APIs:</span>
-                <span className="font-black text-black uppercase text-[9.5px]">{setupApis.length} Active</span>
-              </div>
+          {/* DNA Controls: custom overrides and DNA mockups upload */}
+          <div className="border-4 border-black p-5 bg-[#FFFDF5] shadow-[4px_4px_0px_0px_#000] space-y-3.5">
+            <div className="border-b border-black pb-2 flex justify-between items-center">
+              <span className="text-[10.5px] font-black uppercase text-black flex items-center gap-1">
+                <Sliders className="w-4 h-4 text-[#FFD93D]" />
+                CUSTOM DESIGN CODES (DNA OVERRIDES)
+              </span>
+              <span className="text-[7.5px] font-mono font-bold text-neutral-400 bg-zinc-900 border border-black px-1.5 py-0.2 uppercase text-white rounded">LIVE INJECTOR</span>
             </div>
-          </div>
-
-          {/* Dynamic DNA Modifiers */}
-          <div className="border-4 border-black p-4 bg-[#FFFDF5] shadow-[4px_4px_0px_0px_#000] space-y-2.5">
-            <span className="text-[9px] font-black uppercase text-black/60 block">Custom DNA Overrides</span>
             
             <textarea
-              placeholder="e.g. Injected 1px light gray borders,Outfit headings, spring button active click compression states..."
+              placeholder="e.g. Injected 1px light gray borders, Outfit typography headings, spring button active click compression states..."
               value={customThemePrompt}
               onChange={(e) => setCustomThemePrompt(e.target.value)}
-              className="w-full border-2 border-black p-2 font-bold text-[9.5px] bg-white focus:outline-none min-h-[50px] resize-none shadow-[1.5px_1.5px_0px_0px_#000] placeholder-neutral-400"
+              className="w-full border-2 border-black p-2.5 font-bold text-[10px] bg-white focus:outline-none min-h-[60px] resize-none shadow-[2px_2px_0px_0px_#000] placeholder-neutral-400"
             />
 
-            <div className="relative border-2 border-dashed border-black bg-white p-3 text-center flex flex-col items-center justify-center gap-1.5 shadow-[1.5px_1.5px_0px_0px_#000]">
+            <div className="relative border-2 border-dashed border-black bg-white p-3 text-center flex flex-col items-center justify-center gap-1.5 shadow-[2px_2px_0px_0px_#000]">
               <Upload className="w-4 h-4 text-black/60" />
-              <span className="text-[8.5px] font-black uppercase text-black/50">
-                {themeImage ? `✅ ${themeImage}` : "Drop Reference UI Mockup..."}
+              <span className="text-[9px] font-black uppercase text-black/50">
+                {themeImage ? `✅ Reference: ${themeImage}` : "Drop Reference UI Mockup..."}
               </span>
-              <label className="cursor-pointer bg-[#C4B5FD] border border-black px-2 py-0.5 text-[8px] font-black uppercase shadow-[1px_1px_0px_0px_#000] hover:bg-purple-300 transition-colors">
-                Select file
+              <label className="cursor-pointer bg-[#C4B5FD] border border-black px-2 py-0.5 text-[8.5px] font-black uppercase shadow-[1px_1px_0px_0px_#000] hover:bg-purple-300 transition-colors">
+                Select reference
                 <input
                   type="file"
                   accept="image/*"
@@ -470,6 +404,79 @@ export function DesignStep() {
             </div>
           </div>
 
+          {/* Metadata, deep insights, and compiler telemetry stack */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Telemetry metadata card */}
+            <div className="border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_#000] space-y-2.5">
+              <span className="neo-sticker bg-[#FFD93D] text-[8.5px] font-black uppercase tracking-wide">SYSTEM METADATA</span>
+              
+              <div className="space-y-1.5 text-[10.5px] font-bold pt-1.5 border-t border-black/10">
+                <div className="flex justify-between items-center gap-1">
+                  <span className="text-black/55">Theme:</span>
+                  <span className="font-black text-black uppercase truncate max-w-[100px]">{activeStyle.name}</span>
+                </div>
+                <div className="flex justify-between items-center gap-1">
+                  <span className="text-black/55">Fonts:</span>
+                  <span className="font-black text-neutral-800 bg-neutral-100 border border-black/15 px-1 py-0.2 rounded font-mono truncate max-w-[90px]" title={activeStyle.typography.heading}>
+                    {activeStyle.typography.heading}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-black/55">Score:</span>
+                  <span className="font-black text-emerald-600">{meta.score}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Workspace Telemetry */}
+            <div className="border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_#000] space-y-2.5">
+              <span className="text-[8px] font-black text-black/55 uppercase tracking-wider block">COMPILER STATS</span>
+              
+              <div className="space-y-1.5 text-[10.5px] font-bold pt-1.5 border-t border-black/10">
+                <div className="flex justify-between items-center">
+                  <span className="text-black/55 flex items-center gap-1"><Activity className="w-3 h-3 text-emerald-500" /> State:</span>
+                  <span className="font-black text-green-600 uppercase text-[9.5px]">Ready</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-black/55 flex items-center gap-1"><Database className="w-3 h-3 text-blue-500" /> Pipeline:</span>
+                  <span className="font-black text-black uppercase text-[9.5px]">{selectedSections.length} Secs</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-black/55 flex items-center gap-1"><Shield className="w-3 h-3 text-purple-500" /> APIs:</span>
+                  <span className="font-black text-black uppercase text-[9.5px]">{setupApis.length} Active</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Deep Insights */}
+            <div className="border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_#000] space-y-2 md:col-span-2">
+              <h4 className="text-[9.5px] font-black uppercase text-black flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5 text-blue-500 stroke-[3px]" />
+                THEME VISUAL EXPLANATION
+              </h4>
+              <p className="text-[10px] font-bold text-neutral-600 leading-relaxed italic">
+                "{meta.explanation}"
+              </p>
+            </div>
+
+            {/* Context DNA AI recommendation */}
+            <div className="border-4 border-black bg-zinc-950 text-white p-4 shadow-[4px_4px_0px_0px_#000] space-y-1 md:col-span-2">
+              <span className="text-[7.5px] font-mono tracking-widest text-[#FFD93D] uppercase block">AI PLANNER TIP</span>
+              <p className="text-[9.5px] font-bold text-white/80 leading-relaxed italic">
+                Selected category is aligned with the **{activeStyle.name}** visual framework. The AI planner has calibrated style guidelines.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* ---------------------------------------------------- */}
+        {/* RIGHT COLUMN: Large Immersive Preview Sandbox (col-span-7, 60%) */}
+        {/* ---------------------------------------------------- */}
+        <div className="lg:col-span-7 lg:sticky lg:top-24 w-full">
+          <ThemePreview style={activeStyle} device={device} setDevice={setDevice} />
         </div>
 
       </div>
