@@ -51,6 +51,7 @@ export default function AssistantPage() {
   const [connectionStatus, setConnectionStatus] = useState<"checking" | "connected" | "error">("checking");
   const [connectionError, setConnectionError] = useState("");
   const [selectedChatModel, setSelectedChatModel] = useState("google/gemini-2.5-pro");
+  const [mobileTab, setMobileTab] = useState<"chat" | "modes" | "context">("chat");
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -183,8 +184,36 @@ export default function AssistantPage() {
       {/* Main Workspace Frame */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden max-w-[1400px] w-full mx-auto border-x-4 border-black bg-white">
         
+        {/* Mobile Tab Switcher */}
+        <div className="flex lg:hidden border-b-4 border-black bg-zinc-950 text-white font-black text-xs uppercase shrink-0">
+          <button
+            onClick={() => setMobileTab("chat")}
+            className={`flex-1 py-3 text-center border-r-2 border-black transition-all ${
+              mobileTab === "chat" ? "bg-[#C4B5FD] text-black" : "bg-zinc-900 text-white/60"
+            }`}
+          >
+            💬 Chat
+          </button>
+          <button
+            onClick={() => setMobileTab("modes")}
+            className={`flex-1 py-3 text-center border-r-2 border-black transition-all ${
+              mobileTab === "modes" ? "bg-[#FFD93D] text-black" : "bg-zinc-900 text-white/60"
+            }`}
+          >
+            ⚙️ Modes
+          </button>
+          <button
+            onClick={() => setMobileTab("context")}
+            className={`flex-1 py-3 text-center transition-all ${
+              mobileTab === "context" ? "bg-[#FF6B6B] text-white" : "bg-zinc-900 text-white/60"
+            }`}
+          >
+            📋 Context
+          </button>
+        </div>
+
         {/* Left Panel: Chat Modes */}
-        <div className="w-full lg:w-[280px] border-b-4 lg:border-b-0 lg:border-r-4 border-black bg-zinc-950 text-white p-4 flex flex-col gap-3 overflow-y-auto shrink-0">
+        <div className={`w-full lg:w-[280px] border-b-4 lg:border-b-0 lg:border-r-4 border-black bg-zinc-950 text-white p-4 flex-col gap-3 overflow-y-auto shrink-0 ${mobileTab === "modes" ? "flex" : "hidden lg:flex"}`}>
           <div>
             <span className="text-[10px] font-black uppercase text-white/50 tracking-wider block mb-2">CHAT WORKSPACE MODES</span>
             <p className="text-[11px] font-bold text-white/70 leading-relaxed mb-4">
@@ -220,7 +249,7 @@ export default function AssistantPage() {
         </div>
 
         {/* Center Panel: Messages Stream */}
-        <div className="flex-1 flex flex-col justify-between overflow-hidden bg-zinc-900 text-white">
+        <div className={`flex-1 flex-col justify-between overflow-hidden bg-zinc-900 text-white ${mobileTab === "chat" ? "flex" : "hidden lg:flex"}`}>
           {/* Active Status Info */}
           <div className="border-b-2 border-black bg-zinc-950 px-4 py-2 flex items-center justify-between text-[10px] font-black uppercase text-white/60">
             <div className="flex flex-wrap items-center gap-4">
@@ -399,7 +428,7 @@ export default function AssistantPage() {
         </div>
 
         {/* Right Panel: Workspace DNA Summary */}
-        <div className="w-full lg:w-[320px] border-t-4 lg:border-t-0 lg:border-l-4 border-black bg-[#FFFDF5] p-6 space-y-6 overflow-y-auto shrink-0">
+        <div className={`w-full lg:w-[320px] border-t-4 lg:border-t-0 lg:border-l-4 border-black bg-[#FFFDF5] p-6 space-y-6 overflow-y-auto shrink-0 ${mobileTab === "context" ? "block" : "hidden lg:block"}`}>
           <div className="space-y-1">
             <span className="neo-sticker bg-[#FF6B6B] text-white text-[9px] font-black uppercase">SYSTEM DATA</span>
             <h4 className="text-lg font-black uppercase text-black">WORKSPACE CONTEXT</h4>
