@@ -4,17 +4,17 @@ import { useState } from "react";
 import { useBuilderStore } from "@/store/builder-store";
 import { ThemePreview } from "@/components/builder/theme-preview";
 import { designStyles } from "@/lib/design-styles";
-import { 
+import {
   LayoutTemplate, AlignLeft, Info, DollarSign, LayoutPanelTop, ArrowRight, ArrowLeft,
   Camera, Briefcase, Code, Play, Globe, Palette, Users, Send, Phone, MessageSquare, Check, X, ShieldAlert
 } from "lucide-react";
 import { WebsiteContent } from "@/types/builder";
 
 export function ContentArchitectureStep() {
-  const { 
-    websiteContent, setWebsiteContent, 
+  const {
+    websiteContent, setWebsiteContent,
     activeSocials, toggleSocial,
-    complexityTier, selectedCategory, 
+    complexityTier, selectedCategory,
     selectedSections, prevStep, nextStep,
     resumeData, setResumeData,
     selectedDesignStyle
@@ -78,7 +78,7 @@ export function ContentArchitectureStep() {
       {/* LEFT COLUMN: Input Forms (40% width) */}
       <div className="lg:col-span-5 space-y-6">
         <div className="bg-white border-4 border-black p-6 sm:p-8 shadow-[8px_8px_0px_0px_#000] space-y-6">
-          
+
           {/* Title */}
           <div className="text-center mb-6">
             <span className="inline-block px-3 py-1 bg-[#FF6B6B] text-white border-2 border-black font-black uppercase text-xs rotate-[-1deg] mb-4">
@@ -242,8 +242,8 @@ export function ContentArchitectureStep() {
                   {resumeData.companies.map((comp: any, idx: number) => (
                     <div key={idx} className="border-2 border-black p-3 bg-white shadow-[2px_2px_0px_0px_#000] space-y-2">
                       <div className="flex justify-between items-center border-b border-neutral-100 pb-1">
-                        <span className="text-[9px] font-black text-black/40">EXPERIENCE #{idx+1}</span>
-                        <button 
+                        <span className="text-[9px] font-black text-black/40">EXPERIENCE #{idx + 1}</span>
+                        <button
                           onClick={() => {
                             const updated = resumeData.companies.filter((_: any, i: number) => i !== idx);
                             setResumeData({ ...resumeData, companies: updated });
@@ -254,55 +254,55 @@ export function ContentArchitectureStep() {
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        <input 
-                          type="text" 
-                          value={comp.name} 
+                        <input
+                          type="text"
+                          value={comp.name}
                           onChange={(e) => {
                             const updated = [...resumeData.companies];
                             updated[idx] = { ...comp, name: e.target.value };
                             setResumeData({ ...resumeData, companies: updated });
                           }}
-                          placeholder="Company Name" 
-                          className="w-full neo-input text-xs" 
+                          placeholder="Company Name"
+                          className="w-full neo-input text-xs"
                         />
-                        <input 
-                          type="text" 
-                          value={comp.role} 
+                        <input
+                          type="text"
+                          value={comp.role}
                           onChange={(e) => {
                             const updated = [...resumeData.companies];
                             updated[idx] = { ...comp, role: e.target.value };
                             setResumeData({ ...resumeData, companies: updated });
                           }}
-                          placeholder="Role / Title" 
-                          className="w-full neo-input text-xs" 
+                          placeholder="Role / Title"
+                          className="w-full neo-input text-xs"
                         />
                       </div>
-                      <input 
-                        type="text" 
-                        value={comp.duration} 
+                      <input
+                        type="text"
+                        value={comp.duration}
                         onChange={(e) => {
                           const updated = [...resumeData.companies];
                           updated[idx] = { ...comp, duration: e.target.value };
                           setResumeData({ ...resumeData, companies: updated });
                         }}
-                        placeholder="Duration (e.g. 2024 - Present)" 
-                        className="w-full neo-input text-xs" 
+                        placeholder="Duration (e.g. 2024 - Present)"
+                        className="w-full neo-input text-xs"
                       />
-                      <textarea 
-                        value={comp.description} 
+                      <textarea
+                        value={comp.description}
                         onChange={(e) => {
                           const updated = [...resumeData.companies];
                           updated[idx] = { ...comp, description: e.target.value };
                           setResumeData({ ...resumeData, companies: updated });
                         }}
-                        placeholder="Brief work description..." 
-                        rows={2} 
-                        className="w-full neo-input text-xs resize-none" 
+                        placeholder="Brief work description..."
+                        rows={2}
+                        className="w-full neo-input text-xs resize-none"
                       />
                     </div>
                   ))}
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     setResumeData({
                       ...resumeData,
@@ -322,8 +322,8 @@ export function ContentArchitectureStep() {
                   {resumeData.projects.map((proj: any, idx: number) => (
                     <div key={idx} className="border-2 border-black p-3 bg-white shadow-[2px_2px_0px_0px_#000] space-y-2">
                       <div className="flex justify-between items-center border-b border-neutral-100 pb-1">
-                        <span className="text-[9px] font-black text-black/40">PROJECT #{idx+1}</span>
-                        <button 
+                        <span className="text-[9px] font-black text-black/40">PROJECT #{idx + 1}</span>
+                        <button
                           onClick={() => {
                             const updated = resumeData.projects.filter((_: any, i: number) => i !== idx);
                             setResumeData({ ...resumeData, projects: updated });
@@ -334,44 +334,44 @@ export function ContentArchitectureStep() {
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        <input 
-                          type="text" 
-                          value={proj.title} 
+                        <input
+                          type="text"
+                          value={proj.title}
                           onChange={(e) => {
                             const updated = [...resumeData.projects];
                             updated[idx] = { ...proj, title: e.target.value };
                             setResumeData({ ...resumeData, projects: updated });
                           }}
-                          placeholder="Project Title" 
-                          className="w-full neo-input text-xs" 
+                          placeholder="Project Title"
+                          className="w-full neo-input text-xs"
                         />
-                        <input 
-                          type="text" 
-                          value={proj.tech.join(", ")} 
+                        <input
+                          type="text"
+                          value={proj.tech.join(", ")}
                           onChange={(e) => {
                             const updated = [...resumeData.projects];
                             updated[idx] = { ...proj, tech: e.target.value.split(",").map(t => t.trim()) };
                             setResumeData({ ...resumeData, projects: updated });
                           }}
-                          placeholder="Technologies" 
-                          className="w-full neo-input text-xs" 
+                          placeholder="Technologies"
+                          className="w-full neo-input text-xs"
                         />
                       </div>
-                      <textarea 
-                        value={proj.description} 
+                      <textarea
+                        value={proj.description}
                         onChange={(e) => {
                           const updated = [...resumeData.projects];
                           updated[idx] = { ...proj, description: e.target.value };
                           setResumeData({ ...resumeData, projects: updated });
                         }}
-                        placeholder="Brief project details..." 
-                        rows={2} 
-                        className="w-full neo-input text-xs resize-none" 
+                        placeholder="Brief project details..."
+                        rows={2}
+                        className="w-full neo-input text-xs resize-none"
                       />
                     </div>
                   ))}
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     setResumeData({
                       ...resumeData,
@@ -438,14 +438,13 @@ export function ContentArchitectureStep() {
                   { key: "enableFAQ" as const, label: "FAQ / Accordions" },
                   { key: "enableBlog" as const, label: "Blog System" },
                 ].map(toggle => (
-                  <button 
+                  <button
                     key={toggle.key}
                     onClick={() => handleFeatureToggle(toggle.key)}
-                    className={`px-4 py-2.5 border-2 border-black font-black text-xs uppercase transition-all shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px] active:shadow-none ${
-                      websiteContent.features[toggle.key] 
-                        ? "bg-black text-white" 
+                    className={`px-4 py-2.5 border-2 border-black font-black text-xs uppercase transition-all shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px] active:shadow-none ${websiteContent.features[toggle.key]
+                        ? "bg-black text-white"
                         : "bg-white text-black hover:bg-neutral-50"
-                    }`}
+                      }`}
                   >
                     {toggle.label}
                   </button>
@@ -462,7 +461,7 @@ export function ContentArchitectureStep() {
                 <AlignLeft className="w-4 h-4 text-black" />
                 {isPortfolio ? "Contact Form Info" : "Footer Structure"}
               </h3>
-              
+
               <div className="space-y-4">
                 {!isPortfolio && (
                   <div className="grid grid-cols-2 gap-3">
@@ -505,7 +504,7 @@ export function ContentArchitectureStep() {
                 <span className="text-[10px] font-black text-black/45 uppercase block mb-1">
                   Toggle channels to capture URL links:
                 </span>
-                
+
                 <div className="flex flex-wrap gap-2 pb-3 border-b border-black/10">
                   {socialPlatforms.map((platform) => {
                     const isActive = activeSocials[platform.id] ?? false;
@@ -514,11 +513,10 @@ export function ContentArchitectureStep() {
                       <button
                         key={platform.id}
                         onClick={() => toggleSocial(platform.id)}
-                        className={`px-2 py-1 border-2 border-black font-black uppercase text-[8px] flex items-center gap-1 transition-all shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] active:shadow-none ${
-                          isActive 
-                            ? "bg-black text-white" 
+                        className={`px-2 py-1 border-2 border-black font-black uppercase text-[8px] flex items-center gap-1 transition-all shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] active:shadow-none ${isActive
+                            ? "bg-black text-white"
                             : "bg-white text-black hover:bg-neutral-50"
-                        }`}
+                          }`}
                       >
                         <Icon className="w-3 h-3" />
                         {platform.label}
@@ -572,10 +570,10 @@ export function ContentArchitectureStep() {
 
       {/* RIGHT COLUMN: Live Responsive Preview Sandbox (60% width) */}
       <div className="lg:col-span-7 lg:sticky lg:top-24 w-full">
-        <ThemePreview 
-          style={selectedDesignStyle || designStyles[0]} 
-          device={device} 
-          setDevice={setDevice} 
+        <ThemePreview
+          style={selectedDesignStyle || designStyles[0]}
+          device={device}
+          setDevice={setDevice}
         />
       </div>
     </div>

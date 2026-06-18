@@ -121,7 +121,8 @@ export async function generateMasterPromptWithAI(options: AIRequestOptions): Pro
 
     while (retryCount < maxRetries) {
       try {
-        const response = await fetch("/api/generate", {
+        const endpoint = process.env.NODE_ENV === "development" ? "/api/generate" : "/api/chat.php";
+        const response = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

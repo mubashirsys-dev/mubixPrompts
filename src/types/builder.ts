@@ -72,7 +72,7 @@ export interface Feature {
   category: FeatureCategory;
 }
 
-export type FeatureCategory = 
+export type FeatureCategory =
   | 'authentication'
   | 'payments'
   | 'dashboards'
@@ -98,7 +98,7 @@ export interface TechStackItem {
   icon: string;
 }
 
-export type TechStackCategory = 
+export type TechStackCategory =
   | 'frontend'
   | 'styling'
   | 'ui'
@@ -192,7 +192,7 @@ export interface WebsiteContent {
     includeStats: boolean;
     includeAnnouncement: boolean;
   };
-  
+
   // About Architecture (universal)
   about: {
     title: string;
@@ -202,7 +202,7 @@ export interface WebsiteContent {
     vision: string;
     coreValues: string;
   };
-  
+
   // Pricing Architecture (SaaS/Enterprise ONLY)
   pricing?: {
     starterName: string;
@@ -213,14 +213,14 @@ export interface WebsiteContent {
     enterprisePrice: string;
     billingType: "monthly" | "yearly" | "both";
   };
-  
+
   // Features / Content Toggles
   features: {
     enableBlog: boolean;
     enableFAQ: boolean;
     enableTestimonials: boolean;
   };
-  
+
   // Footer Architecture
   footer: {
     showEmail: boolean;
@@ -235,7 +235,7 @@ export interface WebsiteContent {
     phoneNumber: string;
     addressText: string;
   };
-  
+
   socials: {
     instagram: string;
     twitter: string;
@@ -249,7 +249,7 @@ export interface WebsiteContent {
     whatsapp: string;
     telegram: string;
   };
-  
+
   // Navbar Architecture
   navbar: {
     links: string[];
@@ -263,60 +263,63 @@ export interface BuilderState {
   // Navigation
   currentStep: number;
   totalSteps: number;
-  
+
+  // Autosave Status
+  saveStatus: 'saved' | 'saving' | 'unsaved';
+
   // Complexity Tier (NEW — controls everything)
   complexityTier: ComplexityTier;
-  
+
   // Coder Level
   codingLevel: CodingLevel;
-  
+
   // Step 1 — Category
   selectedCategory: Category | null;
   categoryAnswers: Record<string, any>;
-  
+
   // Step 2 — Website Goals
   websiteGoals: string[];
-  
+
   // Step 3 — Brand Builder (merged details + brand)
   projectDetails: ProjectDetails;
   brandBuilder: BrandBuilder;
-  
+
   // Step 4 — Design Style
   selectedDesignStyle: DesignStyle | null;
-  
+
   // Step 5 — Sections
   selectedSections: string[];
-  
+
   // Step 6 — Content
   websiteContent: WebsiteContent;
   activeSocials: Record<string, boolean>;
-  
+
   // Step 7 — Features
   selectedFeatures: string[];
-  
+
   // Step 8 — Advanced Systems (complexity >= advanced)
   setupApis: string[];
   apiCredentials: ApiCredentials;
   activeSecurityRules: string[];
-  
+
   // Step 9 — Generate
   selectedAIModel: AIModel | null;
   selectedTechStack: string[];
   deploymentConfig: DeploymentConfig;
-  
+
   // Custom/Override Options
   customThemePrompt: string;
-  
+
   // Resume Data (Portfolio category)
   resumeData: ResumeData | null;
-  
+
   // Prompt Output
   generatedPrompt: string;
   isGenerating: boolean;
-  
+
   // Smart State Management
   rememberProject: boolean;
-  
+
   // Actions
   setStep: (step: number) => void;
   nextStep: () => void;

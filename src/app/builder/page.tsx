@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useBuilderStore } from "@/store/builder-store";
 import { Navbar } from "@/components/layout/navbar";
 import { StepIndicator } from "@/components/builder/step-indicator";
+import { getCategoryWorkflowMeta } from "@/lib/workflows-meta";
+
+// Core Steps
 import { CategoryStep } from "@/components/builder/steps/category-step";
 import { WebsiteGoalsStep } from "@/components/builder/steps/website-goals-step";
 import { BrandStep } from "@/components/builder/steps/brand-step";
@@ -12,28 +15,63 @@ import { DesignStep } from "@/components/builder/steps/design-step";
 import { SectionStep } from "@/components/builder/steps/section-step";
 import { ContentArchitectureStep } from "@/components/builder/steps/content-architecture-step";
 import { AIModelStep } from "@/components/builder/steps/ai-model-step";
-import { DeploymentStep } from "@/components/builder/steps/deployment-step";
-import { SecurityStep } from "@/components/builder/steps/security-step";
-import { GenerateStep } from "@/components/builder/steps/generate-step";
+
+// Custom Steps
+import { ProjectsStep } from "@/components/builder/steps/projects-step";
+import { SkillsStep } from "@/components/builder/steps/skills-step";
+import { SocialsStep } from "@/components/builder/steps/socials-step";
+import { ProductDetailsStep } from "@/components/builder/steps/product-details-step";
+import { PricingStep } from "@/components/builder/steps/pricing-step";
+import { CompetitorsStep } from "@/components/builder/steps/competitors-step";
+import { RestaurantDetailsStep } from "@/components/builder/steps/restaurant-details-step";
+import { MenuStep } from "@/components/builder/steps/menu-step";
+import { ReservationStep } from "@/components/builder/steps/reservation-step";
+import { AcademyInfoStep } from "@/components/builder/steps/academy-info-step";
+import { CoachesStep } from "@/components/builder/steps/coaches-step";
+import { ProgramsStep } from "@/components/builder/steps/programs-step";
+import { PrayerTimingsStep } from "@/components/builder/steps/prayer-timings-step";
+import { EventsStep } from "@/components/builder/steps/events-step";
+import { DonationsStep } from "@/components/builder/steps/donations-step";
+
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Star, Lightbulb, Activity, Database, Shield, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { AIChatAssistant } from "@/components/shared/ai-chat-assistant";
 
-// ============================================================
-// UNIFIED STEP MAP — 11 steps linear planning
-// ============================================================
-const stepComponents: Record<number, React.FC> = {
-  1: CategoryStep,
-  2: WebsiteGoalsStep,
-  3: BrandStep,
-  4: DetailsImportStep,
-  5: DesignStep,
-  6: SectionStep,
-  7: ContentArchitectureStep,
-  8: AIModelStep,
-  9: DeploymentStep,
-  10: SecurityStep,
-  11: GenerateStep,
+// UNIFIED WORKFLOW STEP COMPONENT MAP
+const stepComponentsMap: Record<string, React.FC> = {
+  category: CategoryStep,
+  goals: WebsiteGoalsStep,
+  brand: BrandStep,
+  resume: DetailsImportStep,
+  theme: DesignStep,
+  content: ContentArchitectureStep,
+  "ai-model": AIModelStep,
+  
+  // Custom Portfolio steps
+  projects: ProjectsStep,
+  skills: SkillsStep,
+  socials: SocialsStep,
+  
+  // Custom SaaS steps
+  product: ProductDetailsStep,
+  features: SectionStep,
+  pricing: PricingStep,
+  competitors: CompetitorsStep,
+  
+  // Custom Restaurant steps
+  "restaurant-details": RestaurantDetailsStep,
+  menu: MenuStep,
+  reservation: ReservationStep,
+  
+  // Custom Football Academy steps
+  "academy-info": AcademyInfoStep,
+  coaches: CoachesStep,
+  programs: ProgramsStep,
+  
+  // Custom Mosque steps
+  "prayer-timings": PrayerTimingsStep,
+  events: EventsStep,
+  donations: DonationsStep,
 };
 
 export default function BuilderPage() {
@@ -41,13 +79,6 @@ export default function BuilderPage() {
   const {
     currentStep,
     selectedCategory,
-    selectedDesignStyle,
-    selectedFeatures,
-    complexityTier,
-    selectedSections,
-    setupApis,
-    rememberProject,
-    setRememberProject,
     resetBuilder,
     setStep,
     hydrateStore
@@ -58,50 +89,70 @@ export default function BuilderPage() {
     hydrateStore();
   }, [hydrateStore]);
 
-  const StepComponent = stepComponents[currentStep] || CategoryStep;
+  // Compute dynamic workflow based on active selectedCategory
+  const workflow = useMemo(() => {
+    return getCategoryWorkflowMeta(selectedCategory?.id || null);
+  }, [selectedCategory]);
 
-  // Helper Tip matching currentStep
-  const getHelperTip = (step: number) => {
-    switch (step) {
-      case 1:
-        return "Select a website category template. Simple search filters highlight popular templates.";
-      case 2:
-        return "Select your primary objectives and choose your prompt generation speed tier (Fast, Standard, Ultra).";
-      case 3:
-        return "Configure your brand characteristics, logo structure, and custom launch domains.";
-      case 4:
-        return "Provide details or upload a resume to automatically extract content and auto-fill your core sections.";
-      case 5:
-        return "Choose a visual theme. Your uploaded profile picture or mockups will render live in the browser sandbox.";
-      case 6:
-        return "Arrange your website homepage sections in their visual sequence. Reorder, duplicate, or delete instantly.";
-      case 7:
-        return "Presents editable parsed sections with desktop, tablet, and mobile live responsive previews.";
-      case 8:
-        return "Select your target AI model engine (ChatGPT, Claude, Gemini, etc.) and optimize instructions for its capabilities.";
-      case 9:
-        return "Choose standard deployment channels: direct ZIP export, Deploy to Vercel instructions, or GitHub repository.";
-      case 10:
-        return "Configure simple high-integrity protection measures like XSS and CSRF safeguards and spam verification.";
-      case 11:
-        return "Review, copy and compile your complete, premium prompt. Reset your workspace cleanly for subsequent tasks.";
-      default:
-        return "Complete each step to build your perfect website blueprint prompt.";
+  const totalSteps = workflow.length;
+
+  // Handle step clamping if category changes or workflow updates
+  useEffect(() => {
+    if (totalSteps > 0 && workflow.length !== store.totalSteps) {
+      useBuilderStore.setState({ totalSteps: workflow.length });
     }
-  };
-
-  const getAiSuggestion = () => {
-    if (!selectedCategory) {
-      return "Select a category in Step 1 to pre-load a customized blueprint.";
+    if (currentStep > workflow.length) {
+      setStep(workflow.length);
     }
-    return `📂 ${selectedCategory.name} Mode Active: Clean, standard layouts are pre-selected. All advanced systems remain lightweight by default.`;
-  };
+  }, [workflow.length, currentStep, totalSteps, store.totalSteps, setStep]);
 
-  // Full-width for design and preview steps
-  const isFullWidth = currentStep === 5 || currentStep === 7;
+  // Resolve active step component
+  const activeStepMeta = workflow[currentStep - 1] || workflow[0] || { id: "category", label: "Category" };
+  const StepComponent = stepComponentsMap[activeStepMeta.id] || CategoryStep;
+
+  // Keyboard navigation listener (ENTER = Continue, SHIFT+ENTER = Previous)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeElement = document.activeElement;
+      if (activeElement) {
+        const tagName = activeElement.tagName.toLowerCase();
+        if (
+          tagName === "input" || 
+          tagName === "textarea" || 
+          tagName === "select" || 
+          activeElement.getAttribute("contenteditable") === "true"
+        ) {
+          return;
+        }
+      }
+
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          if (currentStep > 1) {
+            setStep(currentStep - 1);
+          }
+        } else {
+          if (currentStep < totalSteps) {
+            setStep(currentStep + 1);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [currentStep, totalSteps, setStep]);
+
+  // Calculate metrics for progress bar
+  const completionPercentage = Math.round(((currentStep - 1) / totalSteps) * 100);
+  const remainingSteps = totalSteps - currentStep;
+  const estimatedMinutes = Math.max(1, Math.ceil(remainingSteps * 1.5));
 
   return (
-    <main className="min-h-screen bg-[#FFFDF5] bg-neo-grid pt-24 text-black pb-16">
+    <main className="min-h-screen bg-[#FFFDF5] bg-neo-grid pt-24 text-black pb-28">
       <Navbar />
       <div className="px-4 sm:px-6">
         <div className="mx-auto max-w-7xl">
@@ -115,7 +166,7 @@ export default function BuilderPage() {
               WEBSITE <span className="bg-[#FF6B6B] text-white px-2 border-4 border-black inline-block rotate-[-1.5deg] shadow-[3px_3px_0px_0px_#000]">BLUEPRINT GENERATOR</span>
             </h1>
             <p className="text-xs font-bold text-black/70 max-w-md mx-auto leading-relaxed">
-              Complete each step to generate a category-specific, clean, production-ready website master prompt.
+              Plan and configure category-specific, clean, production-ready website prompts using keyboard shortcuts.
             </p>
 
             <button
@@ -142,133 +193,92 @@ export default function BuilderPage() {
             <StepIndicator />
           </div>
 
-          {/* Workspace Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-            {/* Main Content */}
-            <div className={isFullWidth ? "lg:col-span-12" : "lg:col-span-8"}>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentStep}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -15 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {StepComponent && <StepComponent />}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            {/* Sidebar (hidden on full-width steps) */}
-            {!isFullWidth && (
-              <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
-
-                {/* Workspace DNA */}
-                <div className="border-4 border-black bg-white p-5 shadow-[4px_4px_0px_0px_#000] space-y-3">
-                  <span className="neo-sticker bg-[#FFD93D] text-[9px] font-black uppercase tracking-wide">WORKSPACE DNA</span>
-                  <div className="space-y-2 text-xs font-bold pt-2 border-t border-black/10">
-                    <div className="flex justify-between">
-                      <span className="text-black/55">Category:</span>
-                      <span className="font-black text-black uppercase">{selectedCategory?.name || "Not Selected"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-black/55">Design Style:</span>
-                      <span className="font-black text-black uppercase">{selectedDesignStyle?.name || "Not Selected"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-black/55">Generation Speed:</span>
-                      <span className="font-black text-black uppercase bg-[#C4B5FD] px-1.5 py-0.5 border border-black">
-                        {complexityTier === "simple" ? "Fast" : complexityTier === "advanced" || complexityTier === "enterprise" ? "Ultra" : "Standard"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Session & Persistence Controls */}
-                <div className="border-4 border-black bg-[#C4B5FD] p-5 shadow-[4px_4px_0px_0px_#000] space-y-3">
-                  <span className="neo-sticker bg-black text-white text-[9px] font-black uppercase tracking-wide">
-                    SESSION MANAGER
-                  </span>
-                  
-                  <div className="pt-2 border-t border-black/20">
-                    {/* Remember Checkbox */}
-                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                      <div className="relative">
-                        <input
-                          type="checkbox"
-                          checked={rememberProject}
-                          onChange={(e) => setRememberProject(e.target.checked)}
-                          className="sr-only"
-                        />
-                        <div className={`w-5 h-5 border-2 border-black flex items-center justify-center transition-all ${
-                          rememberProject ? "bg-black text-white" : "bg-white"
-                        }`}>
-                          {rememberProject && (
-                            <svg className="w-3.5 h-3.5 stroke-[4px] stroke-white" fill="none" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                          )}
-                        </div>
-                      </div>
-                      <span className="text-xs font-black uppercase text-black">
-                        Remember Previous Project
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Helper Tip */}
-                <div className="border-4 border-black bg-[#FFFDF5] p-5 shadow-[4px_4px_0px_0px_#000] space-y-3">
-                  <h4 className="text-xs font-black uppercase text-black flex items-center gap-1.5">
-                    <Lightbulb className="w-4 h-4 text-yellow-500 stroke-[3px]" />
-                    HELPER TIP
-                  </h4>
-                  <p className="text-[11px] font-bold text-black/70 leading-relaxed">
-                    {getHelperTip(currentStep)}
-                  </p>
-                </div>
-
-                {/* AI Recommendations */}
-                <div className="border-4 border-black bg-zinc-950 text-white p-5 shadow-[4px_4px_0px_0px_#000] space-y-3">
-                  <h4 className="text-xs font-black uppercase text-[#FFD93D] flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 stroke-[3px]" />
-                    AI RECOMMENDATIONS
-                  </h4>
-                  <p className="text-[10px] font-bold text-white/80 leading-relaxed italic">
-                    {getAiSuggestion()}
-                  </p>
-                </div>
-
-                {/* Workspace Status */}
-                <div className="border-4 border-black bg-white p-5 shadow-[4px_4px_0px_0px_#000] space-y-3">
-                  <span className="neo-sticker bg-[#FF6B6B] text-white text-[9px] font-black uppercase tracking-wide">WORKSPACE STATUS</span>
-                  <div className="space-y-2 text-xs font-bold pt-2 border-t border-black/10">
-                    <div className="flex justify-between items-center">
-                      <span className="text-black/55 flex items-center gap-1"><Activity className="w-3 h-3" /> Planner:</span>
-                      <span className="font-black text-green-600 uppercase text-[10px]">Active</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-black/55 flex items-center gap-1"><Database className="w-3 h-3" /> Sections:</span>
-                      <span className="font-black text-black uppercase text-[10px]">{selectedSections.length} queued</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-black/55 flex items-center gap-1"><Shield className="w-3 h-3" /> Security:</span>
-                      <span className="font-black text-black uppercase text-[10px]">Standard</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-black/55 flex items-center gap-1"><Star className="w-3 h-3" /> Features:</span>
-                      <span className="font-black text-black uppercase text-[10px]">{selectedFeatures.length} active</span>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            )}
+          {/* Main workspace container */}
+          <div className={`${activeStepMeta.id === "theme" ? "max-w-[90rem]" : "max-w-[70rem]"} mx-auto`}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentStep}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.2 }}
+              >
+                {StepComponent && <StepComponent />}
+              </motion.div>
+            </AnimatePresence>
           </div>
 
         </div>
       </div>
+
+      {/* FIXED BOTTOM ACTION BAR */}
+      <div className="fixed bottom-0 left-0 right-0 border-t-4 border-black bg-white py-3.5 px-6 z-40 shadow-[0_-4px_0_0_#000] flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* Progress & Remaining Specs */}
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <div className="w-full sm:w-48 bg-neutral-100 border-2 border-black h-4 relative shadow-[1px_1px_0_0_#000] overflow-hidden shrink-0">
+            <div 
+              className="bg-[#A78BFA] h-full border-r-2 border-black transition-all duration-300"
+              style={{ width: `${completionPercentage}%` }}
+            />
+          </div>
+          <div className="text-[10px] font-black uppercase text-black shrink-0 tracking-tight">
+            {completionPercentage}% Done • {remainingSteps} Steps left • ~{estimatedMinutes} min remaining
+          </div>
+        </div>
+
+        {/* Buttons and Indicators */}
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          {/* Autosave Status indicator */}
+          <div className="flex items-center gap-2 border-2 border-black bg-[#FFFDF5] px-2.5 py-1.5 shadow-[1.5px_1.5px_0_0_#000] text-[9px] font-black uppercase tracking-wider text-black font-mono">
+            <div className={`w-2 h-2 rounded-full ${
+              store.saveStatus === "saving" ? "bg-amber-500 animate-pulse" : "bg-emerald-500"
+            }`} />
+            {store.saveStatus === "saving" ? "Saving..." : "Draft Saved"}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Previous Button */}
+            {currentStep > 1 && (
+              <button
+                onClick={() => setStep(currentStep - 1)}
+                className="px-3.5 py-2 border-2 border-black bg-white text-xs font-black uppercase text-black hover:bg-neutral-50 shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all"
+                title="Keyboard shortcut: SHIFT+ENTER"
+              >
+                Previous
+              </button>
+            )}
+
+            {/* Manual Save Draft */}
+            <button
+              onClick={() => {
+                useBuilderStore.setState({ saveStatus: "saving" });
+                setTimeout(() => {
+                  useBuilderStore.setState({ saveStatus: "saved" });
+                }, 300);
+              }}
+              className="px-3.5 py-2 border-2 border-black bg-white text-xs font-black uppercase text-black hover:bg-neutral-50 shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all"
+            >
+              Save Draft
+            </button>
+
+            {/* Continue Button */}
+            {currentStep < totalSteps ? (
+              <button
+                onClick={() => setStep(currentStep + 1)}
+                className="px-4 py-2 bg-[#FFD93D] border-2 border-black text-xs font-black uppercase text-black hover:bg-[#ffe169] shadow-[3px_3px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all"
+                title="Keyboard shortcut: ENTER"
+              >
+                Continue
+              </button>
+            ) : (
+              <span className="text-[10px] font-black uppercase text-neutral-400 bg-neutral-100 border border-dashed border-neutral-300 px-3.5 py-2">
+                Compiler Ready
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
       <AIChatAssistant />
     </main>
   );

@@ -496,14 +496,117 @@ Include deployment instructions:
     goalsListSnippet = `\n- **Primary Objectives**: ${websiteGoals.join(", ")}`;
   }
 
-  let planningAnswersSnippet = "";
-  if (categoryAnswers && Object.keys(categoryAnswers).length > 0) {
-    planningAnswersSnippet = `
-### 🧩 CATEGORY PLANNING STRATEGY ANSWERS
-These domain-specific strategy parameters were captured during template configuration:
-${Object.entries(categoryAnswers).map(([k, v]) => `- **${k}**: ${v}`).join("\n")}
-`;
+function formatCategoryAnswers(answers: any): string {
+  if (!answers || Object.keys(answers).length === 0) return "";
+
+  let result = "### 🧩 CATEGORY PLANNING STRATEGY ANSWERS\n";
+
+  for (const [key, value] of Object.entries(answers)) {
+    if (!value) continue;
+
+    // Handle Restaurant Menu
+    if (key === "menu" && Array.isArray(value)) {
+      result += `\n#### 🍽️ RESTAURANT DIGITAL MENU ITEMS:\n`;
+      value.forEach((item: any) => {
+        result += `- **${item.name}** (${item.category}) — **${item.price}**\n  *Description:* ${item.description || "(none)"}\n  *Tag:* ${item.tag || "(none)"}\n`;
+      });
+      continue;
+    }
+
+    // Handle Restaurant Reservation
+    if (key === "reservation" && typeof value === "object") {
+      result += `\n#### 📅 TABLE RESERVATION SETUP:\n`;
+      result += `- **Hotline Phone:** ${(value as any).bookingPhone || "(none)"}\n`;
+      result += `- **Inquiries Email:** ${(value as any).bookingEmail || "(none)"}\n`;
+      result += `- **Max Online Group Capacity:** ${(value as any).maxGroupSize || "8 guests"}\n`;
+      result += `- **Active Shifts:** ${[
+        (value as any).lunchSlots ? "Lunch Shift" : "",
+        (value as any).dinnerSlots ? "Dinner Shift" : "",
+        (value as any).weekendBrunch ? "Weekend Brunch" : ""
+      ].filter(Boolean).join(", ") || "(none)"}\n`;
+      result += `- **Requires Credit Card hold:** ${(value as any).requireCreditCard ? "YES" : "NO"}\n`;
+      continue;
+    }
+
+    // Handle Football Academy Info
+    if (key === "academyInfo" && typeof value === "object") {
+      result += `\n#### ⚽ FOOTBALL ACADEMY SETTINGS:\n`;
+      result += `- **Training Grounds & Facilities:** ${(value as any).trainingGrounds || "(none)"}\n`;
+      result += `- **Target Age Cohorts:** ${(value as any).ageRange || "(none)"}\n`;
+      result += `- **Founded Year:** ${(value as any).foundedYear || "2026"}\n`;
+      result += `- **Accreditation:** ${(value as any).accreditation || "(none)"}\n`;
+      continue;
+    }
+
+    // Handle Football Academy Coaches
+    if (key === "coaches" && Array.isArray(value)) {
+      result += `\n#### 📋 COACHING STAFF ROSTER:\n`;
+      value.forEach((c: any) => {
+        result += `- **${c.name}** (${c.role})\n  *License:* ${c.license || "(none)"}\n  *Bio/Experience:* ${c.experience || "(none)"}\n`;
+      });
+      continue;
+    }
+
+    // Handle Football Academy Programs
+    if (key === "programs" && Array.isArray(value)) {
+      result += `\n#### 🏆 TRAINING PROGRAMS OFFERINGS:\n`;
+      value.forEach((p: any) => {
+        result += `- **${p.title}** (${p.ageGroup}) — **${p.fee}**\n  *Frequency:* ${p.sessionsPerWeek}\n  *Focus/Description:* ${p.description || "(none)"}\n`;
+      });
+      continue;
+    }
+
+    // Handle Mosque Prayer Timings
+    if (key === "prayerTimings" && typeof value === "object") {
+      result += `\n#### 🕌 DAILY CONGREGATIONAL IQAMAH TIMINGS:\n`;
+      result += `- **Calculation Method:** ${(value as any).calculationMethod || "ISNA"}\n`;
+      result += `- **Fajr:** ${(value as any).fajr || "(not set)"}\n`;
+      result += `- **Sunrise:** ${(value as any).sunrise || "(not set)"}\n`;
+      result += `- **Dhuhr:** ${(value as any).dhuhr || "(not set)"}\n`;
+      result += `- **Asr:** ${(value as any).asr || "(not set)"}\n`;
+      result += `- **Maghrib:** ${(value as any).maghrib || "(not set)"}\n`;
+      result += `- **Isha:** ${(value as any).isha || "(not set)"}\n`;
+      result += `- **Friday Jummah:** ${(value as any).jummah || "(not set)"}\n`;
+      continue;
+    }
+
+    // Handle Mosque Events
+    if (key === "events" && Array.isArray(value)) {
+      result += `\n#### 📅 LECTURES & EVENTS CALENDAR:\n`;
+      value.forEach((e: any) => {
+        result += `- **${e.title}** by **${e.speaker}** (${e.dateTime})\n  *Description:* ${e.description || "(none)"}\n`;
+      });
+      continue;
+    }
+
+    // Handle Mosque Donations
+    if (key === "donations" && Array.isArray(value)) {
+      result += `\n#### 💳 CHARITABLE FUNDRAISING DRIVES:\n`;
+      value.forEach((d: any) => {
+        result += `- **${d.title}** — *Goal:* **${d.targetAmount}** (${d.paymentGateway})\n  *Purpose:* ${d.description || "(none)"}\n`;
+      });
+      continue;
+    }
+
+    // Handle SaaS Competitors
+    if (key === "competitors" && Array.isArray(value)) {
+      result += `\n#### ⚔️ COMPETITORS ANALYSIS MATRIX:\n`;
+      value.forEach((c: any) => {
+        result += `- **${c.name}** (${c.website || "No URL"})\n  *Strengths:* ${c.strengths || "(none)"}\n  *Defensive Positioning:* ${c.positioning || "(none)"}\n`;
+      });
+      continue;
+    }
+
+    // Default string fallback
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      result += `- **${key}**: ${value}\n`;
+    }
   }
+
+  return result;
+}
+
+  let planningAnswersSnippet = formatCategoryAnswers(categoryAnswers);
 
   // ============================================================
   // ASSEMBLE MASTER PROMPT

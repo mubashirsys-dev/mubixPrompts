@@ -100,7 +100,7 @@ const initialWebsiteContent: WebsiteContent = {
 };
 
 function saveStoreToLocalStorage(state: any) {
-  if (typeof window === "undefined" || !state.rememberProject) return;
+  if (typeof window === "undefined") return;
   try {
     const dataToSave = {
       currentStep: state.currentStep,
@@ -137,6 +137,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   // Navigation
   currentStep: 1,
   totalSteps: 10,
+  saveStatus: "saved",
 
   // Complexity Tier (replaces builderMode)
   complexityTier: "simple",
@@ -230,8 +231,8 @@ export const useBuilderStore = create<BuilderState>((set) => ({
     // Set hero layout type based on category
     const heroLayout = category.id === "portfolio" ? "portfolio" :
       category.id === "agency" ? "agency" :
-      category.id === "startup-landing" || category.id === "mobile-app-landing" ? "split" :
-      "minimal";
+        category.id === "startup-landing" || category.id === "mobile-app-landing" ? "split" :
+          "minimal";
 
     set((state) => {
       const baseDetails = isChanged ? initialProjectDetails : state.projectDetails;
@@ -450,7 +451,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
     try {
       const remember = localStorage.getItem("mubix_remember_project") === "true";
       set({ rememberProject: remember });
-      
+
       if (remember) {
         const savedData = localStorage.getItem("mubix_builder_project_data");
         if (savedData) {
@@ -490,11 +491,27 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   },
 }));
 
-// Subscribe to store changes for automatic persistence
+// Subscribe to store changes for automatic persistence and autosave status management
 if (typeof window !== "undefined") {
+  let saveTimeout: any = null;
+  let isInternalUpdate = false;
+
   useBuilderStore.subscribe((state) => {
-    if (state.rememberProject) {
-      saveStoreToLocalStorage(state);
+    if (isInternalUpdate) {
+      isInternalUpdate = false;
+      return;
     }
+
+    if (state.saveStatus === "saved") {
+      isInternalUpdate = true;
+      useBuilderStore.setState({ saveStatus: "saving" });
+    }
+
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+      saveStoreToLocalStorage(useBuilderStore.getState());
+      isInternalUpdate = true;
+      useBuilderStore.setState({ saveStatus: "saved" });
+    }, 1200);
   });
 }

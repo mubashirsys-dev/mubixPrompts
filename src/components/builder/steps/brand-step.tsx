@@ -1,10 +1,21 @@
 "use client";
 
 import { useBuilderStore } from "@/store/builder-store";
-import { Sparkles, Globe, Smile, Shirt, ArrowRight, ArrowLeft } from "lucide-react";
+import { Sparkles, Globe, Smile, Shirt, ArrowRight, ArrowLeft, Upload } from "lucide-react";
 
 export function BrandStep() {
   const { brandBuilder, setBrandBuilder, nextStep, prevStep } = useBuilderStore();
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: "logoUrl" | "faviconUrl" | "avatarUrl" | "heroMockupUrl") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setBrandBuilder({ [field]: reader.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const logoTypes = [
     { id: "text", label: "Text Logo", desc: "Clean typographic baseline using custom weights" },

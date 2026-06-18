@@ -48,7 +48,55 @@ export function AIChatAssistant() {
   const [apiError, setApiError] = useState("");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
+  const [connectionStatus, setConnectionStatus] = useState<"checking" | "connected" | "error">("checking");
+  const [connectionError, setConnectionError] = useState("");
+  const [selectedChatModel, setSelectedChatModel] = useState("google/gemini-2.5-pro");
+
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Sync with builder store's selected AI model if possible
+  useEffect(() => {
+    if (store.selectedAIModel?.id) {
+      const storeModelId = store.selectedAIModel.id;
+      const map: Record<string, string> = {
+        chatgpt: "openai/gpt-5",
+        claude: "anthropic/claude-sonnet-4",
+        gemini: "google/gemini-2.5-pro",
+        deepseek: "deepseek/deepseek-chat",
+        groq: "x-ai/grok-4",
+        mistral: "mistralai/mistral-large",
+        llama: "meta-llama/llama-3.1-405b-instruct",
+      };
+      const mapped = map[storeModelId];
+      if (mapped) {
+        setSelectedChatModel(mapped);
+      }
+    }
+  }, [store.selectedAIModel]);
+
+  // Ping connection health check on load
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const endpoint = process.env.NODE_ENV === "development" ? "/api/chat" : "/api/chat.php";
+        const res = await fetch(endpoint);
+        if (!res.ok) {
+          throw new Error(`HTTP error ${res.status}`);
+        }
+        const data = await res.json();
+        if (data.status === "online") {
+          setConnectionStatus("connected");
+        } else {
+          setConnectionStatus("error");
+          setConnectionError(data.details || data.error || "Configuration Error");
+        }
+      } catch (err: any) {
+        setConnectionStatus("error");
+        setConnectionError(err.message || "Failed to contact OpenRouter PHP API");
+      }
+    };
+    checkConnection();
+  }, []);
 
   // Auto-scroll to bottom of conversation
   useEffect(() => {
@@ -67,34 +115,31 @@ export function AIChatAssistant() {
     setApiError("");
 
     const systemPrompt = getChatSystemPrompt(store, activeMode);
-    const targetModel = store.selectedAIModel?.id || "auto";
 
     try {
-      const response = await fetch("/api/chat", {
+      const endpoint = process.env.NODE_ENV === "development" ? "/api/chat" : "/api/chat.php";
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: targetModel,
+          model: selectedChatModel,
           systemPrompt,
           messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content }))
         })
       });
 
       if (!response.ok) {
-        throw new Error(`Server endpoint returned status ${response.status}`);
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Server returned HTTP ${response.status}`);
       }
 
       const data = await response.json();
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
       setMessages((prev) => [...prev, { role: "assistant", content: data.content || "Empty response received." }]);
     } catch (err: any) {
       console.error("[Chat Client Error]:", err);
-      setApiError(err.message || "Local FreeLLMAPI gateway is offline.");
+      setApiError(err.message || "Failed to communicate with OpenRouter backend.");
     } finally {
       setIsTyping(false);
     }
@@ -157,7 +202,9 @@ export function AIChatAssistant() {
                 <div>
                   <h4 className="text-xs font-black uppercase tracking-tight text-white flex items-center gap-1.5">
                     MUBIX OS ASSISTANT
-                    <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse" />
+                    <span className={`w-2 h-2 rounded-full animate-pulse ${
+                      connectionStatus === "connected" ? "bg-green-500" : connectionStatus === "error" ? "bg-red-500" : "bg-yellow-400"
+                    }`} />
                   </h4>
                   <p className="text-[9px] font-bold text-white/50 uppercase">Active Mode: {activeMode}</p>
                 </div>
@@ -200,7 +247,15 @@ export function AIChatAssistant() {
             {/* Dynamic context sticky tag */}
             <div className="bg-[#FFFDF5] text-black border-b-2 border-black py-1 px-3 text-[9px] font-black uppercase flex items-center justify-between">
               <span>🎯 CONTEXT: {store.selectedCategory?.name || "No Category"} ({store.codingLevel})</span>
-              <span className="text-[#FF6B6B]">FreeLLMAPI Active</span>
+              {connectionStatus === "checking" && (
+                <span className="text-amber-600 animate-pulse">Checking API...</span>
+              )}
+              {connectionStatus === "connected" && (
+                <span className="text-[#4ade80] font-black">🟢 AI Connected</span>
+              )}
+              {connectionStatus === "error" && (
+                <span className="text-[#FF6B6B] font-black" title={connectionError}>🔴 API Error</span>
+              )}
             </div>
 
             {/* Message Area */}
@@ -270,21 +325,38 @@ export function AIChatAssistant() {
               )}
 
               {/* API Offline Error Panel */}
-              {apiError && (
+              {(connectionStatus === "error" || apiError) && (
                 <div className="border-2 border-red-500 bg-red-950/40 p-4 space-y-3">
                   <div className="flex items-start gap-2">
                     <ShieldAlert className="w-5 h-5 text-red-500 shrink-0 stroke-[2px]" />
                     <div>
-                      <h5 className="text-[10px] font-black text-red-400 uppercase">GATEWAY CONNECT FAIL</h5>
-                      <p className="text-[10px] font-bold text-red-300/80 leading-normal mt-0.5">{apiError}</p>
+                      <h5 className="text-[10px] font-black text-red-400 uppercase">OPENROUTER CONNECT FAIL</h5>
+                      <p className="text-[10px] font-bold text-red-300/80 leading-normal mt-0.5">{connectionError || apiError}</p>
                     </div>
                   </div>
                   <button
-                    onClick={handleRegenerate}
+                    onClick={async () => {
+                      setConnectionStatus("checking");
+                      setApiError("");
+                      try {
+                        const endpoint = process.env.NODE_ENV === "development" ? "/api/chat" : "/api/chat.php";
+                        const res = await fetch(endpoint);
+                        const data = await res.json();
+                        if (data.status === "online") {
+                          setConnectionStatus("connected");
+                        } else {
+                          setConnectionStatus("error");
+                          setConnectionError(data.details || data.error || "OpenRouter configuration error");
+                        }
+                      } catch (err: any) {
+                        setConnectionStatus("error");
+                        setConnectionError(err.message || "Failed to contact OpenRouter PHP API");
+                      }
+                    }}
                     className="w-full py-1 border border-red-500 hover:bg-red-500 hover:text-white text-[9px] font-black uppercase transition-all flex items-center justify-center gap-1"
                   >
                     <RefreshCw className="w-3 h-3" />
-                    Retry Gateway Connection
+                    Retry OpenRouter Connection
                   </button>
                 </div>
               )}
@@ -307,21 +379,36 @@ export function AIChatAssistant() {
             </div>
 
             {/* Footer Input Bar */}
-            <div className="border-t-4 border-black bg-zinc-900 p-2 flex gap-2">
-              <input
-                type="text"
-                placeholder="Ask your website assistant anything..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                className="flex-1 bg-zinc-950 border-2 border-black text-xs font-bold p-2 text-white placeholder-white/30 focus:outline-none focus:border-white/40"
-                onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
-              />
-              <button
-                onClick={() => handleSend(input)}
-                className="p-2 border-2 border-black bg-[#C4B5FD] text-black hover:bg-[#b09ffd] shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] active:shadow-none flex items-center justify-center"
-              >
-                <Send className="w-4 h-4 text-black stroke-[3.5px]" />
-              </button>
+            <div className="border-t-4 border-black bg-zinc-900 p-2 flex flex-col gap-2">
+              <div className="flex gap-2">
+                <select
+                  value={selectedChatModel}
+                  onChange={(e) => setSelectedChatModel(e.target.value)}
+                  className="bg-[#FFD93D] border-2 border-black text-[9px] font-black uppercase p-1.5 text-black focus:outline-none cursor-pointer"
+                >
+                  <option value="openai/gpt-5">GPT-5</option>
+                  <option value="anthropic/claude-sonnet-4">Claude 4</option>
+                  <option value="google/gemini-2.5-pro">Gemini 2.5</option>
+                  <option value="deepseek/deepseek-chat">DeepSeek</option>
+                  <option value="x-ai/grok-4">Grok 4</option>
+                  <option value="mistralai/mistral-large">Mistral</option>
+                  <option value="meta-llama/llama-3.1-405b-instruct">Llama 3.1</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="Ask your website assistant anything..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  className="flex-1 bg-zinc-950 border-2 border-black text-xs font-bold p-2 text-white placeholder-white/30 focus:outline-none focus:border-white/40"
+                  onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
+                />
+                <button
+                  onClick={() => handleSend(input)}
+                  className="p-2 border-2 border-black bg-[#C4B5FD] text-black hover:bg-[#b09ffd] shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] active:shadow-none flex items-center justify-center"
+                >
+                  <Send className="w-4 h-4 text-black stroke-[3.5px]" />
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

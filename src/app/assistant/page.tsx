@@ -47,8 +47,56 @@ export default function AssistantPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [apiError, setApiError] = useState("");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  
+  const [connectionStatus, setConnectionStatus] = useState<"checking" | "connected" | "error">("checking");
+  const [connectionError, setConnectionError] = useState("");
+  const [selectedChatModel, setSelectedChatModel] = useState("google/gemini-2.5-pro");
 
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Sync with builder store's selected AI model if possible
+  useEffect(() => {
+    if (store.selectedAIModel?.id) {
+      const storeModelId = store.selectedAIModel.id;
+      const map: Record<string, string> = {
+        chatgpt: "openai/gpt-5",
+        claude: "anthropic/claude-sonnet-4",
+        gemini: "google/gemini-2.5-pro",
+        deepseek: "deepseek/deepseek-chat",
+        groq: "x-ai/grok-4",
+        mistral: "mistralai/mistral-large",
+        llama: "meta-llama/llama-3.1-405b-instruct",
+      };
+      const mapped = map[storeModelId];
+      if (mapped) {
+        setSelectedChatModel(mapped);
+      }
+    }
+  }, [store.selectedAIModel]);
+
+  // Ping connection health check on load
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const endpoint = process.env.NODE_ENV === "development" ? "/api/chat" : "/api/chat.php";
+        const res = await fetch(endpoint);
+        if (!res.ok) {
+          throw new Error(`HTTP error ${res.status}`);
+        }
+        const data = await res.json();
+        if (data.status === "online") {
+          setConnectionStatus("connected");
+        } else {
+          setConnectionStatus("error");
+          setConnectionError(data.details || data.error || "Configuration Error");
+        }
+      } catch (err: any) {
+        setConnectionStatus("error");
+        setConnectionError(err.message || "Failed to contact OpenRouter PHP API");
+      }
+    };
+    checkConnection();
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -66,29 +114,30 @@ export default function AssistantPage() {
     setApiError("");
 
     const systemPrompt = getChatSystemPrompt(store, activeMode);
-    const targetModel = store.selectedAIModel?.id || "auto";
 
     try {
-      const response = await fetch("/api/chat", {
+      const endpoint = process.env.NODE_ENV === "development" ? "/api/chat" : "/api/chat.php";
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: targetModel,
+          model: selectedChatModel,
           systemPrompt,
           messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content }))
         })
       });
 
       if (!response.ok) {
-        throw new Error(`Server returned HTTP ${response.status}`);
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Server returned HTTP ${response.status}`);
       }
 
       const data = await response.json();
       setMessages((prev) => [...prev, { role: "assistant", content: data.content || "Empty response from gateway." }]);
     } catch (err: any) {
-      setApiError(err.message || "Failed to reach LLM gateway on port 3001.");
+      setApiError(err.message || "Failed to communicate with OpenRouter backend.");
     } finally {
       setIsTyping(false);
     }
@@ -116,6 +165,16 @@ export default function AssistantPage() {
       handleSend("Hi! Introduce yourself and suggest some project features.");
     }
   };
+
+  const chatModelsList = [
+    { id: "openai/gpt-5", label: "ChatGPT (GPT-5)" },
+    { id: "anthropic/claude-sonnet-4", label: "Claude (Sonnet 4)" },
+    { id: "google/gemini-2.5-pro", label: "Gemini (2.5 Pro)" },
+    { id: "deepseek/deepseek-chat", label: "DeepSeek Chat" },
+    { id: "x-ai/grok-4", label: "Grok (Grok 4)" },
+    { id: "mistralai/mistral-large", label: "Mistral Large" },
+    { id: "meta-llama/llama-3.1-405b-instruct", label: "Llama (3.1 405B)" }
+  ];
 
   return (
     <div className="h-screen bg-[#FFFDF5] text-black flex flex-col pt-[76px] overflow-hidden">
@@ -164,10 +223,27 @@ export default function AssistantPage() {
         <div className="flex-1 flex flex-col justify-between overflow-hidden bg-zinc-900 text-white">
           {/* Active Status Info */}
           <div className="border-b-2 border-black bg-zinc-950 px-4 py-2 flex items-center justify-between text-[10px] font-black uppercase text-white/60">
-            <span className="flex items-center gap-1.5">
-              <Bot className="w-4 h-4 text-[#FFD93D]" />
-              MODE: {activeMode}
-            </span>
+            <div className="flex flex-wrap items-center gap-4">
+              <span className="flex items-center gap-1.5">
+                <Bot className="w-4 h-4 text-[#FFD93D]" />
+                MODE: {activeMode}
+              </span>
+              <div className="flex items-center gap-1.5 border-l border-white/20 pl-4">
+                {connectionStatus === "checking" && (
+                  <span className="text-white/40 animate-pulse">Checking API...</span>
+                )}
+                {connectionStatus === "connected" && (
+                  <span className="text-[#4ade80] font-black flex items-center gap-1">
+                    🟢 AI Connected
+                  </span>
+                )}
+                {connectionStatus === "error" && (
+                  <span className="text-[#FF6B6B] font-black flex items-center gap-1" title={connectionError}>
+                    🔴 API Error
+                  </span>
+                )}
+              </div>
+            </div>
             <button
               onClick={handleClear}
               className="text-white/40 hover:text-white flex items-center gap-1 hover:underline"
@@ -238,23 +314,40 @@ export default function AssistantPage() {
             )}
 
             {/* Offline gateway retry block */}
-            {apiError && (
+            {(connectionStatus === "error" || apiError) && (
               <div className="border-4 border-red-500 bg-red-950/40 p-5 max-w-xl mx-auto space-y-4 shadow-[4px_4px_0px_0px_#000]">
                 <div className="flex items-start gap-3">
                   <ShieldAlert className="w-8 h-8 text-red-500 shrink-0 stroke-[2px]" />
                   <div>
-                    <h5 className="text-xs font-black text-red-400 uppercase">GATEWAY CONNECT FAILURE</h5>
+                    <h5 className="text-xs font-black text-red-400 uppercase">OPENROUTER CONNECTION ERROR</h5>
                     <p className="text-[11px] font-bold text-red-300/80 leading-relaxed mt-1">
-                      MubixPrompts could not establish a connection to your local FreeLLMAPI server: <strong>{apiError}</strong>. Ensure the server is listening at <strong>http://localhost:3001</strong>.
+                      MubixPrompts could not establish a connection to OpenRouter: <strong>{connectionError || apiError}</strong>. Ensure your API Key is configured correctly in `.env`.
                     </p>
                   </div>
                 </div>
                 <button
-                  onClick={handleRegenerate}
+                  onClick={async () => {
+                    setConnectionStatus("checking");
+                    setApiError("");
+                    try {
+                      const endpoint = process.env.NODE_ENV === "development" ? "/api/chat" : "/api/chat.php";
+                      const res = await fetch(endpoint);
+                      const data = await res.json();
+                      if (data.status === "online") {
+                        setConnectionStatus("connected");
+                      } else {
+                        setConnectionStatus("error");
+                        setConnectionError(data.details || data.error || "OpenRouter configuration error");
+                      }
+                    } catch (err: any) {
+                      setConnectionStatus("error");
+                      setConnectionError(err.message || "Failed to contact OpenRouter PHP API");
+                    }
+                  }}
                   className="w-full py-2 border-2 border-red-500 hover:bg-red-500 hover:text-white text-xs font-black uppercase transition-all flex items-center justify-center gap-1.5"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  Retry Server Gateway Handshake
+                  Retry OpenRouter API Connection
                 </button>
               </div>
             )}
@@ -277,7 +370,16 @@ export default function AssistantPage() {
           </div>
 
           {/* Input Panel */}
-          <div className="border-t-4 border-black bg-zinc-900 p-4 flex gap-3">
+          <div className="border-t-4 border-black bg-zinc-900 p-4 flex flex-col sm:flex-row gap-3">
+            <select
+              value={selectedChatModel}
+              onChange={(e) => setSelectedChatModel(e.target.value)}
+              className="bg-[#FFD93D] border-4 border-black text-xs font-black uppercase p-3 text-black focus:outline-none shadow-[2px_2px_0px_0px_#000] cursor-pointer"
+            >
+              {chatModelsList.map(m => (
+                <option key={m.id} value={m.id} className="text-black bg-white font-bold">{m.label}</option>
+              ))}
+            </select>
             <input
               type="text"
               placeholder="Type your design, UX, backend, or prompt refinement questions..."
@@ -288,7 +390,7 @@ export default function AssistantPage() {
             />
             <button
               onClick={() => handleSend(input)}
-              className="px-6 border-4 border-black bg-[#C4B5FD] text-black hover:bg-[#b09ffd] shadow-[3px_3px_0px_0px_#000] active:translate-y-[1px] active:shadow-none font-black uppercase text-xs flex items-center gap-1.5"
+              className="px-6 py-3 sm:py-0 border-4 border-black bg-[#C4B5FD] text-black hover:bg-[#b09ffd] shadow-[3px_3px_0px_0px_#000] active:translate-y-[1px] active:shadow-none font-black uppercase text-xs flex items-center justify-center gap-1.5"
             >
               Send
               <ChevronRight className="w-4 h-4 stroke-[3.5px]" />

@@ -1,7 +1,8 @@
 "use client";
 
 import { useBuilderStore } from "@/store/builder-store";
-import { designStyles } from "@/lib/design-styles";
+import { designStyles, getCategoryDesignStyles } from "@/lib/design-styles";
+import { getCategoryWorkflowMeta } from "@/lib/workflows-meta";
 import { ThemePreview } from "@/components/builder/theme-preview";
 import {
   ArrowRight, ArrowLeft, Search, Layers, Cpu, BookOpen,
@@ -9,7 +10,7 @@ import {
   Sliders, SlidersHorizontal, Monitor, Tablet, Smartphone, Upload, Info
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 
 // Lucide icon mapping to styles
 const styleIcons: Record<string, any> = {
@@ -95,11 +96,33 @@ export function DesignStep() {
     selectedFeatures
   } = useBuilderStore();
 
+  const steps = getCategoryWorkflowMeta(selectedCategory?.id || null);
+  const themeStep = steps.find((s) => s.id === "theme");
+  const stepLabel = themeStep ? themeStep.label : "Visual Theme";
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [sortBy, setSortBy] = useState<"popularity" | "complexity" | "alphabetical">("popularity");
   const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [themeImage, setThemeImage] = useState(brandBuilder.themeReferenceUrl || "");
+  const categoriesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = categoriesRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        container.scrollLeft += e.deltaY * 1.2;
+      }
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
 
   const handleThemeImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -108,14 +131,34 @@ export function DesignStep() {
     setBrandBuilder({ themeReferenceUrl: file.name });
   };
 
-  const activeStyle = selectedDesignStyle || designStyles[0];
-  const meta = styleMetadata[activeStyle.id] || {
-    tags: [],
-    bestFor: "Startup",
-    complexity: "Sophisticated",
-    score: "95%",
-    explanation: "Beautiful typography and grid alignment structures."
-  };
+  const categoryStyles = useMemo(() => {
+    return getCategoryDesignStyles(selectedCategory?.id || null);
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    if (!selectedDesignStyle || !categoryStyles.some(s => s.id === selectedDesignStyle.id)) {
+      if (categoryStyles[0]) {
+        setDesignStyle(categoryStyles[0]);
+      }
+    }
+  }, [categoryStyles, selectedDesignStyle, setDesignStyle]);
+
+  const activeStyle = selectedDesignStyle && categoryStyles.some(s => s.id === selectedDesignStyle.id)
+    ? selectedDesignStyle
+    : categoryStyles[0] || designStyles[0];
+
+  const meta = useMemo(() => {
+    const defaultMeta = {
+      tags: activeStyle.characteristics || [],
+      bestFor: activeStyle.description || "General Category Usage",
+      complexity: "Sophisticated" as const,
+      badge: activeStyle.name.toUpperCase(),
+      supportsDark: activeStyle.id.includes("dark") || activeStyle.id.includes("stripe") || activeStyle.id.includes("linear") || activeStyle.id.includes("vercel") || activeStyle.id.includes("dashboard") || activeStyle.id.includes("developer"),
+      score: "99%",
+      explanation: activeStyle.description
+    };
+    return styleMetadata[activeStyle.id] || defaultMeta;
+  }, [activeStyle]);
 
   // Sticky Category Toggles
   const categories = [
@@ -127,33 +170,37 @@ export function DesignStep() {
     { id: "modern", label: "Modern / SaaS" }
   ];
 
-  const isPortfolio = selectedCategory?.id === "portfolio";
-
   // Search + Filter + Sorting algorithm
   const filteredAndSortedStyles = useMemo(() => {
     // 1. Filter
-    const filtered = designStyles.filter(style => {
-      if (isPortfolio && style.id === "bauhaus") return false;
-
+    const filtered = categoryStyles.filter(style => {
       const matchesSearch = style.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            style.description.toLowerCase().includes(searchQuery.toLowerCase());
+        style.description.toLowerCase().includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
 
       if (selectedFilter === "all") return true;
+      
+      const isDark = style.id.includes("dark") || 
+                     style.id.includes("stripe") || 
+                     style.id.includes("linear") || 
+                     style.id.includes("vercel") || 
+                     style.id.includes("dashboard") || 
+                     style.id.includes("developer");
+                     
       if (selectedFilter === "light") {
-        return ["monochrome", "newsprint", "saas"].includes(style.id);
+        return !isDark;
       }
       if (selectedFilter === "dark") {
-        return ["modern-dark"].includes(style.id);
+        return isDark;
       }
       if (selectedFilter === "minimal") {
-        return ["monochrome", "saas"].includes(style.id);
+        return style.id.includes("minimal") || style.id.includes("monochrome") || style.id.includes("editorial");
       }
       if (selectedFilter === "editorial") {
-        return ["monochrome", "newsprint"].includes(style.id);
+        return style.id.includes("editorial") || style.id.includes("monochrome") || style.id.includes("brutalist") || style.id.includes("luxury");
       }
       if (selectedFilter === "modern") {
-        return ["saas", "modern-dark"].includes(style.id);
+        return style.id.includes("modern") || style.id.includes("saas") || style.id.includes("stripe") || style.id.includes("linear") || style.id.includes("vercel") || style.id.includes("startup") || style.id.includes("dashboard");
       }
       return true;
     });
@@ -170,22 +217,22 @@ export function DesignStep() {
         return compB - compA; // Higher complexity first
       }
       // default: popularity / score
-      const scoreA = parseInt(styleMetadata[a.id]?.score || "90%");
-      const scoreB = parseInt(styleMetadata[b.id]?.score || "90%");
+      const scoreA = parseInt(styleMetadata[a.id]?.score || "99%");
+      const scoreB = parseInt(styleMetadata[b.id]?.score || "99%");
       return scoreB - scoreA;
     });
-  }, [searchQuery, selectedFilter, sortBy]);
+  }, [categoryStyles, searchQuery, selectedFilter, sortBy]);
 
   return (
     <div className="space-y-6 bg-[#FFFDF5] border-4 border-black p-4 sm:p-6 shadow-[8px_8px_0px_0px_#000] max-w-full mx-auto relative overflow-hidden">
-      
+
       {/* Wizard Step Title */}
       <div className="text-center mb-6">
         <span className="inline-block px-3 py-1 bg-[#FFD93D] border-2 border-black font-black uppercase text-[10px] tracking-widest rotate-[-1deg] mb-3">
           STEP 4: AI DESIGN SYSTEM DIRECTORY
         </span>
         <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-black">
-          SELECT YOUR VISUAL THEME
+          SELECT YOUR {stepLabel.toUpperCase()}
         </h2>
         <p className="text-[11px] sm:text-xs font-bold text-black/70 mt-1.5 max-w-2xl mx-auto">
           Pre-load verified UI tokens natively. Watch the central responsive browser sandbox synthesize layouts in real time.
@@ -196,18 +243,17 @@ export function DesignStep() {
       {/* TOP: STICKY UTILITY BAR */}
       {/* ==================================================== */}
       <div className="sticky top-0 z-40 bg-white border-4 border-black p-3.5 shadow-[4px_4px_0px_0px_#000] flex flex-col md:flex-row md:items-center justify-between gap-4">
-        
+
         {/* Category Filters Toggle */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1 md:pb-0 scroll-smooth">
+        <div ref={categoriesRef} className="flex gap-1.5 overflow-x-auto pb-1 md:pb-0 scroll-smooth">
           {categories.map((cat) => {
             const isActive = selectedFilter === cat.id;
             return (
               <button
                 key={cat.id}
                 onClick={() => setSelectedFilter(cat.id)}
-                className={`px-3 py-1.5 border-2 border-black text-[9px] font-black uppercase tracking-wider transition-all duration-100 shrink-0 ${
-                  isActive ? "bg-[#FFD93D] text-black shadow-[2px_2px_0px_0px_#000]" : "bg-neutral-50 hover:bg-neutral-100 text-black"
-                }`}
+                className={`px-3 py-1.5 border-2 border-black text-[9px] font-black uppercase tracking-wider transition-all duration-100 shrink-0 ${isActive ? "bg-[#FFD93D] text-black shadow-[2px_2px_0px_0px_#000]" : "bg-neutral-50 hover:bg-neutral-100 text-black"
+                  }`}
               >
                 {cat.label}
               </button>
@@ -275,12 +321,12 @@ export function DesignStep() {
       {/* 2-COLUMN COHESIVE FIGMA-LIKE WORKSPACE BOARD */}
       {/* ==================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
+
         {/* ---------------------------------------------------- */}
         {/* LEFT COLUMN: Controls & Configurations (col-span-5, 40%) */}
         {/* ---------------------------------------------------- */}
         <div className="lg:col-span-5 space-y-6">
-          
+
           {/* Swatches Deck: Style Theme Selection Card Directory */}
           <div className="bg-white border-4 border-black p-5 shadow-[4px_4px_0px_0px_#000] space-y-4">
             <div className="flex items-center justify-between border-b-2 border-black pb-2">
@@ -301,11 +347,10 @@ export function DesignStep() {
                         layoutId={`theme-card-${style.id}`}
                         key={style.id}
                         onClick={() => setDesignStyle(style)}
-                        className={`w-full text-left p-3.5 border-4 transition-all duration-150 flex flex-col gap-3 relative shadow-[3.5px_3.5px_0px_0px_#000] cursor-pointer hover:shadow-[5px_5px_0px_0px_#000] ${
-                          isSelected
+                        className={`w-full text-left p-3.5 border-4 transition-all duration-150 flex flex-col gap-3 relative shadow-[3.5px_3.5px_0px_0px_#000] cursor-pointer hover:shadow-[5px_5px_0px_0px_#000] ${isSelected
                             ? "bg-[#C4B5FD] text-black border-black shadow-none translate-y-[1.5px]"
                             : "bg-white border-black text-black"
-                        }`}
+                          }`}
                       >
                         {/* Visual Quality Badge */}
                         {metaInfo.badge && (
@@ -379,7 +424,7 @@ export function DesignStep() {
               </span>
               <span className="text-[7.5px] font-mono font-bold text-neutral-400 bg-zinc-900 border border-black px-1.5 py-0.2 uppercase text-white rounded">LIVE INJECTOR</span>
             </div>
-            
+
             <textarea
               placeholder="e.g. Injected 1px light gray borders, Outfit typography headings, spring button active click compression states..."
               value={customThemePrompt}
@@ -406,11 +451,11 @@ export function DesignStep() {
 
           {/* Metadata, deep insights, and compiler telemetry stack */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
+
             {/* Telemetry metadata card */}
             <div className="border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_#000] space-y-2.5">
               <span className="neo-sticker bg-[#FFD93D] text-[8.5px] font-black uppercase tracking-wide">SYSTEM METADATA</span>
-              
+
               <div className="space-y-1.5 text-[10.5px] font-bold pt-1.5 border-t border-black/10">
                 <div className="flex justify-between items-center gap-1">
                   <span className="text-black/55">Theme:</span>
@@ -432,7 +477,7 @@ export function DesignStep() {
             {/* Workspace Telemetry */}
             <div className="border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_#000] space-y-2.5">
               <span className="text-[8px] font-black text-black/55 uppercase tracking-wider block">COMPILER STATS</span>
-              
+
               <div className="space-y-1.5 text-[10.5px] font-bold pt-1.5 border-t border-black/10">
                 <div className="flex justify-between items-center">
                   <span className="text-black/55 flex items-center gap-1"><Activity className="w-3 h-3 text-emerald-500" /> State:</span>

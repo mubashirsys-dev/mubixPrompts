@@ -69,13 +69,13 @@ export const categoryComplexityDefaults: Record<string, ComplexityTier> = {
 // ============================================
 export const categorySectionsMap: Record<string, string[]> = {
   // === PERSONAL / PORTFOLIO ===
-  "portfolio": ["Hero", "About Me", "Skills", "Experience", "Resume", "Featured Projects", "Certifications", "Testimonials", "Tech Stack", "Contact", "Footer"],
-  "resume-builder": ["Hero", "Features", "Templates Gallery", "Builder Preview", "Pricing", "Testimonials", "FAQ", "Footer"],
+  "portfolio": ["Hero", "About Me", "Skills", "Featured Projects", "Experience", "Testimonials", "Contact", "Footer"],
+  "resume-builder": ["Profile Info", "Experience Timeline", "Skills Details", "Education", "Certificates", "Projects Details", "Contact Card"],
 
   // === BUSINESS ===
   "business": ["Hero", "Services", "About Company", "Team", "Pricing", "Testimonials", "FAQ", "Contact", "Footer"],
   "startup-landing": ["Hero", "Problem Statement", "Solution", "Features Grid", "How It Works", "Social Proof", "Pricing", "FAQ", "CTA Section", "Footer"],
-  "agency": ["Hero", "Services", "Process", "Clients", "Portfolio", "Team", "Testimonials", "Booking", "CTA Section", "Footer"],
+  "agency": ["Hero", "Services", "Case Studies", "Team", "Process", "Testimonials", "Clients", "Contact", "Footer"],
   "mobile-app-landing": ["Hero", "App Screenshots", "Features", "How It Works", "Testimonials", "Download CTA", "Pricing", "FAQ", "Footer"],
 
   // === SAAS / TECH ===
@@ -117,7 +117,7 @@ export const categorySectionsMap: Record<string, string[]> = {
   "event-management": ["Hero", "Services", "Past Events Gallery", "How It Works", "Testimonials", "Booking", "Contact", "Footer"],
 
   // === COMMUNITY & SOCIAL ===
-  "blogging": ["Hero", "Featured Posts", "Categories", "Newsletter", "Author Spotlight", "Footer"],
+  "blogging": ["Featured Post", "Latest Articles", "Categories", "Author Section", "Newsletter", "Footer"],
   "social-media": ["Hero", "Features Grid", "App Preview", "How It Works", "Download CTA", "Footer"],
   "dating-app": ["Hero", "How It Works", "Features", "Success Stories", "Download CTA", "FAQ", "Footer"],
   "job-portal": ["Hero", "Featured Jobs", "Categories", "For Employers", "For Job Seekers", "Testimonials", "Footer"],

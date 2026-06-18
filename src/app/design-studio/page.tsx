@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { designStyles } from "@/lib/design-styles";
 import { Navbar } from "@/components/layout/navbar";
 import { ThemePreview } from "@/components/builder/theme-preview";
@@ -18,6 +18,24 @@ export default function DesignStudioPage() {
   const [customAiPrompt, setCustomAiPrompt] = useState("");
   const [aiTokensResult, setAiTokensResult] = useState<string | null>(null);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = tabsRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        container.scrollLeft += e.deltaY * 1.2;
+      }
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
 
   const handleCopy = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
@@ -166,7 +184,7 @@ export default function DesignStudioPage() {
             <div className="border-4 border-black bg-white shadow-[6px_6px_0px_0px_#000] overflow-hidden">
               
               {/* Tab headers */}
-              <div className="flex border-b-4 border-black bg-neutral-50 overflow-x-auto no-scrollbar shrink-0">
+              <div ref={tabsRef} className="flex border-b-4 border-black bg-neutral-50 overflow-x-auto shrink-0">
                 {[
                   { id: "dna", label: "Design DNA Tokens", icon: Layers },
                   { id: "components", label: "Isolated Playground", icon: Palette },
