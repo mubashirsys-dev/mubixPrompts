@@ -50,7 +50,7 @@ export default function AssistantPage() {
   
   const [connectionStatus, setConnectionStatus] = useState<"checking" | "connected" | "error">("checking");
   const [connectionError, setConnectionError] = useState("");
-  const [selectedChatModel, setSelectedChatModel] = useState("google/gemini-2.5-pro");
+  const [selectedChatModel, setSelectedChatModel] = useState("deepseek/deepseek-chat");
   const [mobileTab, setMobileTab] = useState<"chat" | "modes" | "context">("chat");
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -79,7 +79,7 @@ export default function AssistantPage() {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        const endpoint = process.env.NODE_ENV === "development" ? "/api/chat" : "/api/chat.php";
+        const endpoint = "/api/chat";
         const res = await fetch(endpoint);
         if (!res.ok) {
           throw new Error(`HTTP error ${res.status}`);
@@ -117,7 +117,7 @@ export default function AssistantPage() {
     const systemPrompt = getChatSystemPrompt(store, activeMode);
 
     try {
-      const endpoint = process.env.NODE_ENV === "development" ? "/api/chat" : "/api/chat.php";
+      const endpoint = "/api/chat";
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -359,7 +359,7 @@ export default function AssistantPage() {
                     setConnectionStatus("checking");
                     setApiError("");
                     try {
-                      const endpoint = process.env.NODE_ENV === "development" ? "/api/chat" : "/api/chat.php";
+                      const endpoint = "/api/chat";
                       const res = await fetch(endpoint);
                       const data = await res.json();
                       if (data.status === "online") {
