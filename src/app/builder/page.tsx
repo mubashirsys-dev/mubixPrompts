@@ -229,19 +229,19 @@ export default function BuilderPage() {
         {/* Buttons and Indicators */}
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           {/* Autosave Status indicator */}
-          <div className="flex items-center gap-2 border-2 border-black bg-[#FFFDF5] px-2.5 py-1.5 shadow-[1.5px_1.5px_0_0_#000] text-[9px] font-black uppercase tracking-wider text-black font-mono">
+          <div className="hidden sm:flex items-center gap-2 border-2 border-black bg-[#FFFDF5] px-2.5 py-1.5 shadow-[1.5px_1.5px_0_0_#000] text-[9px] font-black uppercase tracking-wider text-black font-mono">
             <div className={`w-2 h-2 rounded-full ${
               store.saveStatus === "saving" ? "bg-amber-500 animate-pulse" : "bg-emerald-500"
             }`} />
             {store.saveStatus === "saving" ? "Saving..." : "Draft Saved"}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
             {/* Previous Button */}
             {currentStep > 1 && (
               <button
                 onClick={() => setStep(currentStep - 1)}
-                className="px-3.5 py-2 border-2 border-black bg-white text-xs font-black uppercase text-black hover:bg-neutral-50 shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all"
+                className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 border-2 border-black bg-white text-[11px] sm:text-xs font-black uppercase text-black hover:bg-neutral-50 shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all"
                 title="Keyboard shortcut: SHIFT+ENTER"
               >
                 Previous
@@ -256,7 +256,7 @@ export default function BuilderPage() {
                   useBuilderStore.setState({ saveStatus: "saved" });
                 }, 300);
               }}
-              className="px-3.5 py-2 border-2 border-black bg-white text-xs font-black uppercase text-black hover:bg-neutral-50 shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all"
+              className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 border-2 border-black bg-white text-[11px] sm:text-xs font-black uppercase text-black hover:bg-neutral-50 shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all"
             >
               Save Draft
             </button>
@@ -265,13 +265,13 @@ export default function BuilderPage() {
             {currentStep < totalSteps ? (
               <button
                 onClick={() => setStep(currentStep + 1)}
-                className="px-4 py-2 bg-[#FFD93D] border-2 border-black text-xs font-black uppercase text-black hover:bg-[#ffe169] shadow-[3px_3px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#FFD93D] border-2 border-black text-[11px] sm:text-xs font-black uppercase text-black hover:bg-[#ffe169] shadow-[3px_3px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all"
                 title="Keyboard shortcut: ENTER"
               >
                 Continue
               </button>
             ) : (
-              <span className="text-[10px] font-black uppercase text-neutral-400 bg-neutral-100 border border-dashed border-neutral-300 px-3.5 py-2">
+              <span className="text-[10px] font-black uppercase text-neutral-400 bg-neutral-100 border border-dashed border-neutral-300 px-2.5 sm:px-3.5 py-1.5 sm:py-2">
                 Compiler Ready
               </span>
             )}

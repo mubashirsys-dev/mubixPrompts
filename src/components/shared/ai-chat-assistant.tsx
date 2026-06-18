@@ -191,7 +191,7 @@ export function AIChatAssistant() {
             initial={{ opacity: 0, y: 50, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.95 }}
-            className="fixed bottom-24 right-6 w-[360px] sm:w-[440px] h-[580px] z-50 border-4 border-black bg-zinc-950 text-white flex flex-col justify-between shadow-[8px_8px_0px_0px_#000] overflow-hidden"
+            className="fixed bottom-24 right-4 sm:right-6 w-[calc(100vw-32px)] sm:w-[440px] h-[580px] z-50 border-4 border-black bg-zinc-950 text-white flex flex-col justify-between shadow-[8px_8px_0px_0px_#000] overflow-hidden"
           >
             {/* Header */}
             <div className="border-b-4 border-black bg-zinc-900 p-4 flex items-center justify-between">
